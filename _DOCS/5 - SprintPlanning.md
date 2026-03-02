@@ -6,7 +6,7 @@ Ce planning respecte la contrainte de rendre le jeu local jouable dès le premie
 
 ## 🏁 Sprint 1 : Fondations & Jeu Local (MVP Hotseat)
 
-**Objectif :** L'application est installée, l'utilisateur est authentifié et deux joueurs peuvent jouer une partie complète (avec Timer) sur le même appareil.
+**Objectif :** L'application est installée, l'utilisateur est authentifié et deux joueurs peuvent jouer une partie complète sur le même appareil.
 
 ### Backlog Exhaustif
 
@@ -42,7 +42,7 @@ Ce planning respecte la contrainte de rendre le jeu local jouable dès le premie
 * **Gestion Abandons :** Gérer le cas où un joueur quitte l'app ou clique sur "Abandonner".
 * **Gestion Nulle :** Implémenter le flux de proposition de match nul (Bouton "Proposer", Notification, Accepter/Refuser).
 * **UI Lobby :** Créer l'écran de recherche avec spinner et annulation.
-* **Handshake :** Afficher les infos de l'adversaire (Avatar/Pseudo/ELO) au début du match.
+* **Handshake :** Afficher les infos de l'adversaire (Avatar/Pseudo) au début du match.
 
 ## 📊 Sprint 3 : Données, Statistiques & Historique
 
@@ -97,6 +97,7 @@ Ce planning respecte la contrainte de rendre le jeu local jouable dès le premie
 
 ### Backlog Exhaustif
 
+* **Chess Royal :** Ajouter des cartes et de l'énergie pour ajouter les pièces au fil du temps.
 * **Mode Duck Chess :** Implémenter la logique où chaque joueur doit déplacer un "canard" (bloqueur) après son coup.
 * **Mode Fog of War :** Modifier le rendu du plateau pour masquer les pièces adverses non menacées (vision limitée).
 * **Mode Crazy House :** Permettre de "dropper" les pièces capturées sur le plateau (nécessite UI réserve de pièces).
