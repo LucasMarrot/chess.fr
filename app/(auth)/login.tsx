@@ -1,152 +1,117 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, TextInput, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { Alert } from 'react-native';
+import { Button, Input, Spinner, Text, YStack } from 'tamagui';
 import { supabase } from '@/lib/supabase';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
 
 export default function LoginScreen() {
-    // États pour les champs
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-    // État pour basculer entre Login et Sign Up
-    const [isSignUp, setIsSignUp] = useState(false);
-    const [loading, setLoading] = useState(false);
+  async function handleSignIn() {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) Alert.alert('Erreur', error.message);
+    setLoading(false);
+  }
 
-    // Fonction pour la connexion
-    async function handleSignIn() {
-        setLoading(true);
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) Alert.alert('Erreur', error.message);
-        setLoading(false);
+  async function handleSignUp() {
+    if (password !== confirmPassword) {
+      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+      return;
     }
 
-    // Fonction pour l'inscription
-    async function handleSignUp() {
-        if (password !== confirmPassword) {
-            Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
-            return;
-        }
+    setLoading(true);
+    const { data, error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password,
+    });
 
-        setLoading(true);
-        const { data, error } = await supabase.auth.signUp({ email, password });
-
-        if (error) {
-            Alert.alert('Erreur', error.message);
-        } else if (!data.session) {
-            Alert.alert('Vérifiez vos emails', 'Un lien de confirmation vous a été envoyé.');
-        }
-        setLoading(false);
+    if (error) {
+      Alert.alert('Erreur', error.message);
+    } else if (!data.session) {
+      Alert.alert('Vérifiez vos emails', 'Un lien de confirmation vous a été envoyé.');
     }
 
-    return (
-        <ThemedView style={styles.container}>
-            <ThemedText type="title" style={styles.title}>Chess.fr</ThemedText>
-            <ThemedText type="subtitle" style={styles.subtitle}>
-                {isSignUp ? 'Créez votre compte joueur' : 'Bon retour parmi nous'}
-            </ThemedText>
+    setLoading(false);
+  }
 
-            <View style={styles.form}>
-                {/* Champ Email */}
-                <ThemedText type="defaultSemiBold">Email</ThemedText>
-                <TextInput
-                    onChangeText={setEmail}
-                    value={email}
-                    placeholder="votre@email.com"
-                    placeholderTextColor="#888"
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    style={styles.input}
-                />
+  return (
+    <YStack flex={1} justifyContent="center" padding="$6" gap="$4" backgroundColor="$background">
+      <YStack gap="$2" marginBottom="$4">
+        <Text fontSize="$9" fontWeight="700" textAlign="center">
+          Chess.fr
+        </Text>
+        <Text fontSize="$4" textAlign="center" opacity={0.7}>
+          {isSignUp ? 'Créez votre compte joueur' : 'Bon retour parmi nous'}
+        </Text>
+      </YStack>
 
-                {/* Champ Mot de passe */}
-                <ThemedText type="defaultSemiBold">Mot de passe</ThemedText>
-                <TextInput
-                    onChangeText={setPassword}
-                    value={password}
-                    secureTextEntry
-                    placeholder="********"
-                    placeholderTextColor="#888"
-                    autoCapitalize="none"
-                    style={styles.input}
-                />
+      <YStack gap="$2">
+        <Text fontSize="$4" fontWeight="600">
+          Email
+        </Text>
+        <Input
+          value={email}
+          onChangeText={setEmail}
+          placeholder="votre@email.com"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          size="$5"
+        />
 
-                {/* Champ Confirmation (Affiché uniquement si isSignUp est vrai) */}
-                {isSignUp && (
-                    <>
-                        <ThemedText type="defaultSemiBold">Confirmer le mot de passe</ThemedText>
-                        <TextInput
-                            onChangeText={setConfirmPassword}
-                            value={confirmPassword}
-                            secureTextEntry
-                            placeholder="********"
-                            placeholderTextColor="#888"
-                            autoCapitalize="none"
-                            style={styles.input}
-                        />
-                    </>
-                )}
-            </View>
+        <Text fontSize="$4" fontWeight="600">
+          Mot de passe
+        </Text>
+        <Input
+          value={password}
+          onChangeText={setPassword}
+          placeholder="********"
+          secureTextEntry
+          autoCapitalize="none"
+          size="$5"
+        />
 
-            {/* Bouton Principal (Change selon le mode) */}
-            <TouchableOpacity
-                style={[styles.button, styles.buttonPrimary]}
-                disabled={loading}
-                onPress={isSignUp ? handleSignUp : handleSignIn}
-            >
-                {loading ? (
-                    <ActivityIndicator color="white" />
-                ) : (
-                    <ThemedText style={styles.buttonText}>
-                        {isSignUp ? "S'inscrire" : "Se connecter"}
-                    </ThemedText>
-                )}
-            </TouchableOpacity>
+        {isSignUp && (
+          <>
+            <Text fontSize="$4" fontWeight="600">
+              Confirmer le mot de passe
+            </Text>
+            <Input
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="********"
+              secureTextEntry
+              autoCapitalize="none"
+              size="$5"
+            />
+          </>
+        )}
+      </YStack>
 
-            {/* Bouton pour basculer entre les modes */}
-            <TouchableOpacity
-                style={styles.switchButton}
-                onPress={() => setIsSignUp(!isSignUp)}
-            >
-                <ThemedText type="link">
-                    {isSignUp ? "Déjà un compte ? Se connecter" : "Pas de compte ? Créer un profil"}
-                </ThemedText>
-            </TouchableOpacity>
-        </ThemedView>
-    );
+      <Button
+        marginTop="$3"
+        size="$5"
+        theme="Primary"
+        disabled={loading}
+        onPress={isSignUp ? handleSignUp : handleSignIn}
+      >
+        {loading ? <Spinner color="$color" /> : isSignUp ? "S'inscrire" : 'Se connecter'}
+      </Button>
+
+      <Button
+        marginTop="$2"
+        chromeless
+        disabled={loading}
+        onPress={() => setIsSignUp((prev) => !prev)}
+      >
+        {isSignUp ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un profil'}
+      </Button>
+    </YStack>
+  );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, padding: 30, justifyContent: 'center' },
-    title: { textAlign: 'center', marginBottom: 10 },
-    subtitle: { textAlign: 'center', marginBottom: 40, opacity: 0.7 },
-    form: { gap: 10, marginBottom: 20 },
-    input: {
-        backgroundColor: '#f5f5f5',
-        color: '#000',
-        padding: 15,
-        borderRadius: 12,
-        marginTop: 5,
-        marginBottom: 10,
-        fontSize: 16,
-    },
-    button: {
-        alignItems: 'center',
-        padding: 18,
-        borderRadius: 12,
-        marginTop: 10,
-    },
-    buttonPrimary: {
-        backgroundColor: '#007AFF',
-    },
-    buttonText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    switchButton: {
-        marginTop: 20,
-        alignItems: 'center',
-    }
-});
