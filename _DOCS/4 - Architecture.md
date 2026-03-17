@@ -17,53 +17,42 @@ Le choix de la stack privilégie l'homogénéité du langage (**TypeScript**) et
 
 ### 2.1 Frontend (Application Client)
 
-* **Framework :** **React Native avec Expo (SDK 50+)**.
+- **Framework :** **React Native avec Expo (SDK 50+)**.
+  - _Justification :_ Codebase unique pour Web, iOS et Android. Itération rapide avec Expo Go.
 
-  * *Justification :* Codebase unique pour Web, iOS et Android. Itération rapide avec Expo Go.
+- **Langage :** **TypeScript**.
+  - _Justification :_ Sécurité du typage indispensable pour la logique complexe des règles d'échecs.
 
-* **Langage :** **TypeScript**.
+- **Routage :** **Expo Router (File-based routing)**.
+  - _Justification :_ Gestion native des URLs profondes (Deep Linking), critique pour le partage de liens de parties (`myapp.com/game/123`).
 
-  * *Justification :* Sécurité du typage indispensable pour la logique complexe des règles d'échecs.
+- **Gestion d'État :** **Zustand**.
+  - _Justification :_ Plus léger et moins verbeux que Redux, idéal pour gérer l'état asynchrone (Session, WebSocket, Jeu).
 
-* **Routage :** **Expo Router (File-based routing)**.
-
-  * *Justification :* Gestion native des URLs profondes (Deep Linking), critique pour le partage de liens de parties (`myapp.com/game/123`).
-
-* **Gestion d'État :** **Zustand**.
-
-  * *Justification :* Plus léger et moins verbeux que Redux, idéal pour gérer l'état asynchrone (Session, WebSocket, Jeu).
-
-* **Bibliothèque UI :** **Tamagui**.
-
-  * *Justification :* Solution "Universal App" par excellence. Tamagui offre des performances natives supérieures (compilateur optimisant) et un rendu Web impeccable (CSS pur). Idéal pour un design responsive et cohérent entre les plateformes sans sacrifier la performance.
+- **Bibliothèque UI :** **Tamagui**.
+  - _Justification :_ Solution "Universal App" par excellence. Tamagui offre des performances natives supérieures (compilateur optimisant) et un rendu Web impeccable (CSS pur). Idéal pour un design responsive et cohérent entre les plateformes sans sacrifier la performance.
 
 ### 2.2 Moteur de Jeu & Interface
 
-* **Logique Métier :** **Chess.js**.
+- **Logique Métier :** **Chess.js**.
+  - _Justification :_ Standard industriel pour la validation des coups, la détection de Mat/Pat/Nul et la génération FEN/PGN.
 
-  * *Justification :* Standard industriel pour la validation des coups, la détection de Mat/Pat/Nul et la génération FEN/PGN.
+- **Composant UI (Plateau) :** **`react-native-chessboard`**.
+  - _Justification :_ Composant performant gérant les gestes (Drag & Drop) sur mobile et la souris sur Web via SVG.
 
-* **Composant UI (Plateau) :** **`react-native-chessboard`**.
-
-  * *Justification :* Composant performant gérant les gestes (Drag & Drop) sur mobile et la souris sur Web via SVG.
-
-* **Intelligence Artificielle :** **Stockfish.js (WASM)**.
-
-  * *Justification :* Exécution de l'IA côté client (WebAssembly). Permet le jeu hors-ligne et économise les ressources serveur.
+- **Intelligence Artificielle :** **Stockfish.js (WASM)**.
+  - _Justification :_ Exécution de l'IA côté client (WebAssembly). Permet le jeu hors-ligne et économise les ressources serveur.
 
 ### 2.3 Backend & Infrastructure
 
-* **BaaS :** **Supabase**.
+- **BaaS :** **Supabase**.
+  - _Justification :_ Offre Auth, Base de données, API et Temps réel en un seul service.
 
-  * *Justification :* Offre Auth, Base de données, API et Temps réel en un seul service.
+- **Base de Données :** **PostgreSQL**.
+  - _Justification :_ Relationnel, robuste, supporte les transactions complexes et le JSONB.
 
-* **Base de Données :** **PostgreSQL**.
-
-  * *Justification :* Relationnel, robuste, supporte les transactions complexes et le JSONB.
-
-* **Temps Réel :** **Supabase Realtime**.
-
-  * *Justification :* Remplace Socket.io. Permet la synchronisation des coups et du chat via WebSockets sur abonnement aux tables.
+- **Temps Réel :** **Supabase Realtime**.
+  - _Justification :_ Remplace Socket.io. Permet la synchronisation des coups et du chat via WebSockets sur abonnement aux tables.
 
 ## 3. Architecture Fonctionnelle
 
@@ -74,25 +63,22 @@ L'accès à une partie se fait via une URL unique ou un ID : `/game/[id]`. Le sy
 1. **Vérification :** À l'ouverture, le client interroge la table `games`.
 
 2. **Attribution du Rôle :**
+   - **JOUEUR (Reprise) :** Si `user.id` == `white_player_id` OU `black_player_id`.
 
-   * **JOUEUR (Reprise) :** Si `user.id` == `white_player_id` OU `black_player_id`.
+   - **JOUEUR (Join) :** Si la place noire est libre (`NULL`) ET `status` == `'waiting'` ET `visibility` permet l'accès.
 
-   * **JOUEUR (Join) :** Si la place noire est libre (`NULL`) ET `status` == `'waiting'` ET `visibility` permet l'accès.
-
-   * **SPECTATEUR :** Si les deux places sont prises et que l'utilisateur n'est pas un des joueurs.
+   - **SPECTATEUR :** Si les deux places sont prises et que l'utilisateur n'est pas un des joueurs.
 
 3. **Conséquence UI :**
+   - _Joueur :_ Plateau interactif, Drag & Drop activé à son tour.
 
-   * *Joueur :* Plateau interactif, Drag & Drop activé à son tour.
-
-   * *Spectateur :* Plateau verrouillé, vue orientée selon les Blancs (ou paramétrable).
+   - _Spectateur :_ Plateau verrouillé, vue orientée selon les Blancs (ou paramétrable).
 
 ### 3.2 Matchmaking "Join or Create"
 
 Pour jouer contre un inconnu, nous utilisons une logique transactionnelle sur la DB (via une fonction RPC PostgreSQL pour éviter les conflits).
 
-* **Algorithme :**
-
+- **Algorithme :**
   1. Chercher une partie avec `status='waiting'`, `visibility='public'` et `black_player_id=NULL`.
 
   2. **Si trouvée :** UPDATE la partie avec mon ID -> La partie commence.
@@ -101,21 +87,19 @@ Pour jouer contre un inconnu, nous utilisons une logique transactionnelle sur la
 
 ### 3.3 Système Social & Chat
 
-* **Liste d'Amis & Présence :** Utilisation de Supabase Presence pour voir qui est "En ligne" ou "En jeu".
+- **Liste d'Amis & Présence :** Utilisation de Supabase Presence pour voir qui est "En ligne" ou "En jeu".
 
-* **Invitations :**
+- **Invitations :**
+  - L'invitation crée une partie privée (`visibility='private'`) pré-remplie avec l'ID de l'ami.
 
-  * L'invitation crée une partie privée (`visibility='private'`) pré-remplie avec l'ID de l'ami.
+  - Une notification Realtime (Channel utilisateur) déclenche une pop-up chez l'ami.
 
-  * Une notification Realtime (Channel utilisateur) déclenche une pop-up chez l'ami.
+- **Chat Unifié :**
+  - Une seule interface de chat, mais contextuelle.
 
-* **Chat Unifié :**
+  - Si je suis dans `/game/[id]`, j'écris dans le channel `game:[id]`.
 
-  * Une seule interface de chat, mais contextuelle.
-
-  * Si je suis dans `/game/[id]`, j'écris dans le channel `game:[id]`.
-
-  * Si je suis sur le profil d'un ami, j'écris dans le channel `friend:[friendship_id]`.
+  - Si je suis sur le profil d'un ami, j'écris dans le channel `friend:[friendship_id]`.
 
 ## 4. Modélisation des Données (Schéma BDD)
 
@@ -123,49 +107,49 @@ Pour jouer contre un inconnu, nous utilisons une logique transactionnelle sur la
 
 Extension publique de la table d'authentification.
 
-| Colonne | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID (PK) | Lien vers `auth.users` |
-| `username` | Text | Unique, affichage public |
-| `elo` | Integer | Score (Défaut 1200) |
-| `wins` | Integer | Compteur victoires (Auto) |
-| `losses` | Integer | Compteur défaites (Auto) |
-| `draws` | Integer | Compteur nuls (Auto) |
-| `avatar_url` | Text | Lien image |
+| Colonne      | Type      | Description               |
+| :----------- | :-------- | :------------------------ |
+| `id`         | UUID (PK) | Lien vers `auth.users`    |
+| `username`   | Text      | Unique, affichage public  |
+| `elo`        | Integer   | Score (Défaut 1200)       |
+| `wins`       | Integer   | Compteur victoires (Auto) |
+| `losses`     | Integer   | Compteur défaites (Auto)  |
+| `draws`      | Integer   | Compteur nuls (Auto)      |
+| `avatar_url` | Text      | Lien image                |
 
 ### 4.2 Table `games` (Parties)
 
-| Colonne | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID (PK) | Identifiant partie |
-| `white_player_id` | UUID (FK) | Joueur Blancs |
-| `black_player_id` | UUID (FK) | Joueur Noirs (Nullable si en attente) |
-| `fen` | Text | État du plateau (FEN string) |
-| `pgn` | Text | Historique des coups |
-| `status` | Enum | `waiting`, `playing`, `finished`, `aborted` |
-| `winner_id` | UUID (FK) | ID du gagnant (Null si nul ou en cours) |
-| `visibility` | Enum | `public` (Matchmaking), `private` (Invitation/Lien) |
-| `time_control` | JSONB | Ex: `{"limit": 600, "increment": 0}` |
-| `last_move_at` | Timestamp | Pour calculer le temps écoulé |
+| Colonne           | Type      | Description                                         |
+| :---------------- | :-------- | :-------------------------------------------------- |
+| `id`              | UUID (PK) | Identifiant partie                                  |
+| `white_player_id` | UUID (FK) | Joueur Blancs                                       |
+| `black_player_id` | UUID (FK) | Joueur Noirs (Nullable si en attente)               |
+| `fen`             | Text      | État du plateau (FEN string)                        |
+| `pgn`             | Text      | Historique des coups                                |
+| `status`          | Enum      | `waiting`, `playing`, `finished`, `aborted`         |
+| `winner_id`       | UUID (FK) | ID du gagnant (Null si nul ou en cours)             |
+| `visibility`      | Enum      | `public` (Matchmaking), `private` (Invitation/Lien) |
+| `time_control`    | JSONB     | Ex: `{"limit": 600, "increment": 0}`                |
+| `last_move_at`    | Timestamp | Pour calculer le temps écoulé                       |
 
 ### 4.3 Table `friendships` (Relations)
 
-| Colonne | Type | Description |
-| :--- | :--- | :--- |
-| `requester_id` | UUID (FK) | Demandeur |
-| `receiver_id` | UUID (FK) | Destinataire |
-| `status` | Enum | `pending`, `accepted`, `blocked` |
+| Colonne        | Type      | Description                      |
+| :------------- | :-------- | :------------------------------- |
+| `requester_id` | UUID (FK) | Demandeur                        |
+| `receiver_id`  | UUID (FK) | Destinataire                     |
+| `status`       | Enum      | `pending`, `accepted`, `blocked` |
 
 ### 4.4 Table `messages` (Chat)
 
-| Colonne | Type | Description |
-| :--- | :--- | :--- |
-| `id` | UUID | PK |
-| `game_id` | UUID | FK (Nullable) -> Chat de partie |
-| `friendship_id` | UUID | FK (Nullable) -> Chat privé |
-| `sender_id` | UUID | Auteur |
-| `content` | Text | Message |
-| `created_at` | Timestamp | Ordre d'affichage |
+| Colonne         | Type      | Description                     |
+| :-------------- | :-------- | :------------------------------ |
+| `id`            | UUID      | PK                              |
+| `game_id`       | UUID      | FK (Nullable) -> Chat de partie |
+| `friendship_id` | UUID      | FK (Nullable) -> Chat privé     |
+| `sender_id`     | UUID      | Auteur                          |
+| `content`       | Text      | Message                         |
+| `created_at`    | Timestamp | Ordre d'affichage               |
 
 ## 5. Automatisation et Sécurité (Backend)
 
@@ -173,27 +157,25 @@ Extension publique de la table d'authentification.
 
 Pour garantir l'intégrité des données, le client ne met jamais à jour les compteurs `wins/losses`.
 
-* **Mécanisme :** Trigger PostgreSQL `on_game_finish`.
+- **Mécanisme :** Trigger PostgreSQL `on_game_finish`.
 
-* **Logique :** Quand `games.status` passe à `finished` :
+- **Logique :** Quand `games.status` passe à `finished` :
+  - Incrémenter `games_played` pour les deux.
 
-  * Incrémenter `games_played` pour les deux.
+  - Si `winner_id` existe : `+1 wins` pour lui, `+1 losses` pour l'autre.
 
-  * Si `winner_id` existe : `+1 wins` pour lui, `+1 losses` pour l'autre.
-
-  * Sinon : `+1 draws` pour les deux.
+  - Sinon : `+1 draws` pour les deux.
 
 ### 5.2 Sécurité (RLS - Row Level Security)
 
 Les règles d'accès sont définies dans la base de données :
 
 1. **Modification d'une partie :** Autorisé UNIQUEMENT si :
+   - `auth.uid()` est l'un des participants.
 
-   * `auth.uid()` est l'un des participants.
+   - C'est le tour de sa couleur (déduit du FEN).
 
-   * C'est le tour de sa couleur (déduit du FEN).
-
-   * La partie n'est pas finie.
+   - La partie n'est pas finie.
 
 2. **Chat :** Autorisé uniquement si participant à la partie ou membre de l'amitié.
 

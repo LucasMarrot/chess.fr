@@ -3,6 +3,7 @@
 ## 1. Chess.com
 
 ### 🧩 Fonctionnalités principales
+
 - Jeu en ligne (temps réel + correspondance)
 - Matchmaking basé sur le classement Elo
 - Puzzles et entraînement tactique
@@ -13,6 +14,7 @@
 - Profil utilisateur avec statistiques détaillées
 
 ### ⚙️ Technologies (estimées)
+
 - Frontend : React / TypeScript
 - Backend : Java / Kotlin (architecture microservices)
 - Base de données : PostgreSQL + Redis
@@ -20,12 +22,14 @@
 - Infrastructure : Cloud (AWS ou GCP)
 
 ### ✅ Avantages
+
 - Plateforme très complète (tout-en-un)
 - Grande communauté active
 - Interface moderne et riche
 - Analyse de parties très avancée
 
 ### ❌ Inconvénients
+
 - Interface parfois surchargée
 - Nombreuses fonctionnalités payantes (freemium)
 - Aspect orienté grand public, moins “premium”
@@ -35,6 +39,7 @@
 ## 2. Lichess.org
 
 ### 🧩 Fonctionnalités principales
+
 - Jeu en ligne (blitz, bullet, classique)
 - Puzzles illimités
 - Analyse avancée avec moteur Stockfish
@@ -44,6 +49,7 @@
 - Mode hors ligne
 
 ### ⚙️ Technologies
+
 - Backend : Scala (Play Framework)
 - Frontend : JavaScript / Vue.js
 - Base de données : MongoDB
@@ -51,12 +57,14 @@
 - Projet open source
 
 ### ✅ Avantages
+
 - 100% gratuit et open source
 - Très rapide et performant
 - Interface simple et épurée
 - Très apprécié des joueurs expérimentés
 
 ### ❌ Inconvénients
+
 - Design peu “premium”
 - Moins de contenu pédagogique que Chess.com
 - Moins de gamification
@@ -66,6 +74,7 @@
 ## 3. Chess24
 
 ### 🧩 Fonctionnalités principales
+
 - Jeu en ligne
 - Cours avec des joueurs professionnels
 - Streaming de tournois
@@ -73,17 +82,20 @@
 - Vidéos et contenus premium
 
 ### ⚙️ Technologies (estimées)
+
 - Frontend : React
 - Backend : Node.js
 - Streaming : CDN vidéo
 - Moteur d’analyse : Stockfish
 
 ### ✅ Avantages
+
 - Contenu de haute qualité (niveau professionnel)
 - Positionnement haut de gamme
 - Bon pour l’apprentissage avancé
 
 ### ❌ Inconvénients
+
 - Moins de joueurs actifs
 - Interface moins fluide
 - Contenu souvent payant
@@ -92,14 +104,14 @@
 
 ## 🧠 Comparaison des plateformes
 
-| Critère            | Chess.com        | Lichess        | Chess24         |
-|--------------------|------------------|----------------|-----------------|
-| Modèle économique  | Freemium         | Gratuit        | Freemium        |
-| Design             | Moderne (chargé) | Minimaliste    | Sobre / pro     |
-| Communauté         | Très grande      | Grande         | Moyenne         |
-| Performance        | Bonne            | Excellente     | Correcte        |
-| Apprentissage      | Très complet     | Bon            | Très qualitatif |
-| Open source        | ❌               | ✅             | ❌              |
+| Critère           | Chess.com        | Lichess     | Chess24         |
+| ----------------- | ---------------- | ----------- | --------------- |
+| Modèle économique | Freemium         | Gratuit     | Freemium        |
+| Design            | Moderne (chargé) | Minimaliste | Sobre / pro     |
+| Communauté        | Très grande      | Grande      | Moyenne         |
+| Performance       | Bonne            | Excellente  | Correcte        |
+| Apprentissage     | Très complet     | Bon         | Très qualitatif |
+| Open source       | ❌               | ✅          | ❌              |
 
 ---
 
@@ -112,12 +124,14 @@ Les plateformes existantes proposent des solutions très complètes couvrant le 
 - Accès restreint au contenu (Chess24)
 
 ### 🎯 Opportunités
+
 - Créer une interface **premium, sobre et élégante**
 - Adopter un design **minimaliste (noir & blanc + couleur accent)**
 - Proposer une expérience utilisateur fluide et moderne
 - Simplifier les fonctionnalités pour améliorer l’UX
 
 ### ⚠️ Points de vigilance
+
 - Éviter la surcharge fonctionnelle
 - Ne pas complexifier inutilement le backend
 - Garder une cohérence graphique forte

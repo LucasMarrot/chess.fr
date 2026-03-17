@@ -21,9 +21,9 @@ Ce document définit les bonnes pratiques à suivre pour construire une applicat
   - idéalement < 200 lignes
 
 - Organisation recommandée :
-components/
-ui/ # composants purement visuels (Tamagui)
-features/ # composants liés à une feature
+  components/
+  ui/ # composants purement visuels (Tamagui)
+  features/ # composants liés à une feature
 
 ---
 
@@ -86,6 +86,7 @@ features/ # composants liés à une feature
 ## ⚙️ 3. Gestion des actions métier
 
 ### 🧠 Architecture recommandée
+
 features/
 services/
 
@@ -113,6 +114,7 @@ services/
 ## 🗄️ 4. Supabase & accès aux données
 
 ### 🧱 Organisation
+
 lib/
 supabase.ts
 
@@ -232,8 +234,9 @@ app/
 ## 🧪 7. Tests unitaires
 
 ### 🧱 Organisation
+
 tests/
-*.test.ts
+\*.test.ts
 
 ---
 
