@@ -9,7 +9,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "format": "npx prettier --write ."
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@expo-google-fonts/lora": "^0.4.2",
