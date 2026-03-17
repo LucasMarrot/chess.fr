@@ -35,7 +35,7 @@ const tokens = createTokens({
     dark: '#332E2F',
     light: '#FFFAFB',
     primary: '#FAE0E4',
-    interactionGrey: '#807375',
+    interactionGrey: '#7A7677',
     transparent: 'rgba(0,0,0,0)',
   },
   space,
@@ -63,6 +63,30 @@ const themes = {
     colorTransparent: tokens.color.transparent,
     backgroundTransparent: tokens.color.transparent,
   },
+  light_Primary: {
+    background: tokens.color.dark,
+    color: tokens.color.light,
+    borderColor: tokens.color.dark,
+    backgroundPress: tokens.color.primary,
+    backgroundHover: tokens.color.interactionGrey,
+  },
+  light_Secondary: {
+    background: tokens.color.transparent,
+    color: tokens.color.dark,
+    borderColor: tokens.color.primary,
+  },
+  dark_Primary: {
+    background: tokens.color.light,
+    color: tokens.color.dark,
+    borderColor: tokens.color.light,
+    backgroundPress: tokens.color.primary,
+    backgroundHover: tokens.color.primary,
+  },
+  dark_Secondary: {
+    background: tokens.color.transparent,
+    color: tokens.color.light,
+    borderColor: tokens.color.primary,
+  },
 };
 
 const config = createTamagui({
@@ -77,7 +101,12 @@ const config = createTamagui({
     w: 'width',
     h: 'height',
     br: 'borderRadius',
-  },
+  } as const,
 });
+
+type Conf = typeof config;
+declare module 'tamagui' {
+  interface TamaguiCustomConfig extends Conf {}
+}
 
 export default config;
