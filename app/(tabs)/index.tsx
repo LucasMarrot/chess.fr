@@ -1,35 +1,97 @@
-import { StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { ScrollView } from 'react-native';
 
-import { View, YStack } from 'tamagui';
-import { PrimaryButton, SecondaryButton } from '@/components/ui/ChessButton';
+import { Feather } from '@expo/vector-icons';
+import { Paragraph, Separator, Text, View, XStack, YStack } from 'tamagui';
+import { ChessButton } from '@/components/ui/ChessButton';
 
 export default function HomeScreen() {
-  return (
-    <View>
-      <YStack p="$4" gap="$3">
-        <PrimaryButton size="$5">Jouer maintenant</PrimaryButton>
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
 
-        <SecondaryButton size="$4">Paramètres du plateau</SecondaryButton>
+  const handleLoadingDemo = () => {
+    setIsLoadingDemo(true);
+    setTimeout(() => setIsLoadingDemo(false), 1400);
+  };
+
+  return (
+    <ScrollView contentContainerStyle={{ paddingBottom: 42 }}>
+      <YStack p="$4" gap="$4">
+        <YStack gap="$1">
+          <Text fontSize="$8" fontWeight="700">
+            Demo Boutons
+          </Text>
+          <Paragraph size="$4" color="$color">
+            Variantes primary/secondary, tailles et etats interactifs.
+          </Paragraph>
+        </YStack>
+
+        <Separator />
+
+        <YStack gap="$3">
+          <Text fontSize="$6" fontWeight="700">
+            Variantes
+          </Text>
+          <YStack gap="$3" flexWrap="wrap">
+            <ChessButton
+              variant="primary"
+              iconLeft={<Feather name="play" size={16} color={'white'} />}
+            >
+              Jouer
+            </ChessButton>
+            <ChessButton variant="secondary">Parametres</ChessButton>
+          </YStack>
+        </YStack>
+
+        <YStack gap="$3">
+          <Text fontSize="$6" fontWeight="700">
+            Tailles
+          </Text>
+          <XStack gap="$3" flexWrap="wrap" alignItems="center">
+            <ChessButton variant="primary" size="sm">
+              Small
+            </ChessButton>
+            <ChessButton variant="primary" size="md">
+              Medium
+            </ChessButton>
+            <ChessButton variant="primary" size="lg">
+              Large
+            </ChessButton>
+            <ChessButton
+              variant="secondary"
+              size="icon"
+              iconLeft={<Feather name="circle" size={16} />}
+            />
+          </XStack>
+        </YStack>
+
+        <YStack gap="$3">
+          <Text fontSize="$6" fontWeight="700">
+            Etats
+          </Text>
+          <XStack gap="$3" flexWrap="wrap" alignItems="center">
+            <ChessButton variant="primary" disabled>
+              Disabled
+            </ChessButton>
+            <ChessButton variant="primary" loading={isLoadingDemo} onPress={handleLoadingDemo}>
+              Loading
+            </ChessButton>
+            <ChessButton variant="secondary" iconLeft={<Feather name="play" size={16} />}>
+              Icône gauche
+            </ChessButton>
+          </XStack>
+        </YStack>
+
+        <YStack gap="$3">
+          <Text fontSize="$6" fontWeight="700">
+            Full width
+          </Text>
+          <View width="100%" maxWidth={520}>
+            <ChessButton variant="primary" fullWidth>
+              Nouvelle partie classee
+            </ChessButton>
+          </View>
+        </YStack>
       </YStack>
-    </View>
+    </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
