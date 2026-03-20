@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Spinner, Text, XStack, YStack, getTokens, useThemeName } from 'tamagui';
+import { Button, Spinner, Text, XStack, YStack, getTokens } from 'tamagui';
+import { BUTTON_FEEDBACK } from '@/constants/button-feedback';
 import {
   CHESS_BUTTON_INTERACTION,
   CHESS_BUTTON_SIZES,
@@ -7,6 +8,7 @@ import {
   ChessButtonSize,
   ChessButtonVariant,
 } from '@/constants/chess-button';
+import { CheckerboardPressFeedback } from '@/components/ui/CheckerboardPressFeedback';
 
 interface ChessButtonProps {
   variant?: ChessButtonVariant;
@@ -30,16 +32,14 @@ export const ChessButton = ({
   iconLeft,
 }: ChessButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
-
-  const themeName = useThemeName();
-  const isDarkTheme = themeName?.startsWith('dark');
+  const [feedbackSignal, setFeedbackSignal] = useState(0);
 
   const tokens = getTokens();
   const darkColor = tokens.color.dark.val;
-  const lightColor = tokens.color.light.val;
-  const primaryAccent = tokens.color.primary.val;
+  const accentColor = tokens.color.primary.val;
 
-  const isDisabled = disabled || loading;
+  const isInteractionDisabled = disabled;
+  const isActionDisabled = disabled || loading;
   const buttonSize = CHESS_BUTTON_SIZES[size];
   const variantConfig = CHESS_BUTTON_VARIANTS[variant];
   const depth = variantConfig.depth;
@@ -57,10 +57,9 @@ export const ChessButton = ({
       borderColor,
       borderTopSideColor,
       edgeColor,
-      shadowColor: isDarkTheme ? lightColor : darkColor,
+      shadowColor: darkColor,
       hoverColor,
-      focusRingColor: primaryAccent,
-      accentOverlay: primaryAccent,
+      focusRingColor: accentColor,
     };
   }, [
     backgroundColor,
@@ -69,19 +68,25 @@ export const ChessButton = ({
     borderTopSideColor,
     edgeColor,
     hoverColor,
-    isDarkTheme,
     darkColor,
-    lightColor,
-    primaryAccent,
+    accentColor,
   ]);
 
   return (
     <Button
       unstyled
-      onPress={onPress}
-      disabled={isDisabled}
-      onPressIn={() => setIsPressed(true)}
-      onPressOut={() => setIsPressed(false)}
+      onPress={() => {
+        if (isActionDisabled) return;
+        onPress?.();
+      }}
+      disabled={isInteractionDisabled}
+      onPressIn={() => {
+        setIsPressed(true);
+        setFeedbackSignal((value) => value + 1);
+      }}
+      onPressOut={() => {
+        setIsPressed(false);
+      }}
       borderRadius={CHESS_BUTTON_INTERACTION.radiusToken}
       height={buttonSize.height}
       paddingHorizontal={
@@ -91,6 +96,7 @@ export const ChessButton = ({
       }
       width={fullWidth ? '100%' : undefined}
       minWidth={size === 'icon' ? buttonSize.height : undefined}
+      cursor={isActionDisabled ? BUTTON_FEEDBACK.cursorDisabled : BUTTON_FEEDBACK.cursorPointer}
       alignItems="center"
       justifyContent="center"
       position="relative"
@@ -105,7 +111,7 @@ export const ChessButton = ({
         isPressed ? CHESS_BUTTON_INTERACTION.pressedBorderBottomWidth : depth.bottomWidth
       }
       borderBottomColor={colors.edgeColor}
-      opacity={isDisabled ? CHESS_BUTTON_INTERACTION.disabledOpacity : 1}
+      opacity={isActionDisabled ? CHESS_BUTTON_INTERACTION.disabledOpacity : 1}
       shadowColor={colors.shadowColor}
       shadowOffset={{
         width: 0,
@@ -133,25 +139,27 @@ export const ChessButton = ({
         backgroundColor: colors.backgroundColor,
       }}
     >
-      {(isPressed || loading) && (
-        <YStack
-          pointerEvents="none"
-          position="absolute"
-          top={0}
-          right={0}
-          bottom={0}
-          left={0}
-          backgroundColor={colors.accentOverlay}
-          opacity={
-            loading
-              ? CHESS_BUTTON_INTERACTION.overlayLoadingOpacity
-              : CHESS_BUTTON_INTERACTION.overlayPressedOpacity
-          }
-        />
-      )}
+      <CheckerboardPressFeedback
+        playSignal={feedbackSignal}
+        bleedHorizontal={
+          size === 'icon'
+            ? CHESS_BUTTON_INTERACTION.iconHorizontalPaddingWhenIconOnly
+            : buttonSize.horizontalPadding
+        }
+        lightTokenKey={
+          variant === 'primary'
+            ? BUTTON_FEEDBACK.checkerTokens.darkSurface.light
+            : BUTTON_FEEDBACK.checkerTokens.lightSurface.light
+        }
+        darkTokenKey={
+          variant === 'primary'
+            ? BUTTON_FEEDBACK.checkerTokens.darkSurface.dark
+            : BUTTON_FEEDBACK.checkerTokens.lightSurface.dark
+        }
+      />
 
       {loading ? (
-        <Spinner color={primaryAccent} size="small" />
+        <Spinner color={accentColor} size="small" />
       ) : (
         <XStack alignItems="center" justifyContent="center" gap="$2">
           {iconLeft ? <YStack width={buttonSize.iconSize}>{iconLeft}</YStack> : null}

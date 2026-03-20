@@ -1,0 +1,37 @@
+export const PROFILE_UI = {
+  labels: {
+    openMenu: 'Ouvrir le menu profil',
+    closeMenu: 'Fermer le menu profil',
+    fallbackName: 'Utilisateur',
+    undefinedName: 'Nom non defini',
+    disconnected: 'Non connecte',
+    signOut: 'Sign out',
+  },
+  avatarButton: {
+    size: 48,
+    borderRadius: 999,
+    padding: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffsetY: 3,
+    elevation: 2,
+    pressScale: 0.94,
+  },
+  menu: {
+    openDurationMs: 240,
+    closeDurationMs: 140,
+    hiddenTranslateY: -48,
+    hiddenScale: 0.7,
+    wrapperTop: 12,
+    wrapperRight: 12,
+    cardTop: 64,
+    cardWidth: 220,
+  },
+  card: {
+    avatarSize: 72,
+    elevation: 6,
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    shadowOffsetY: 8,
+  },
+} as const;
