@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Alert } from 'react-native';
 import { Button, Input, Spinner, Text, YStack } from 'tamagui';
 import { supabase } from '@/lib/supabase';
+import { ChessButton } from '@/components/ui/ChessButton';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -94,24 +95,25 @@ export default function LoginScreen() {
         )}
       </YStack>
 
-      <Button
-        marginTop="$3"
-        size="$5"
-        theme="Primary"
+      <ChessButton
+        loading={loading}
+        variant="primary"
+        size="lg"
         disabled={loading}
         onPress={isSignUp ? handleSignUp : handleSignIn}
       >
-        {loading ? <Spinner color="$color" /> : isSignUp ? "S'inscrire" : 'Se connecter'}
-      </Button>
+        {isSignUp ? "S'inscrire" : 'Se connecter'}
+      </ChessButton>
 
-      <Button
-        marginTop="$2"
-        chromeless
+      <ChessButton
+        loading={loading}
+        variant="secondary"
+        size="sm"
         disabled={loading}
         onPress={() => setIsSignUp((prev) => !prev)}
       >
         {isSignUp ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un profil'}
-      </Button>
+      </ChessButton>
     </YStack>
   );
 }

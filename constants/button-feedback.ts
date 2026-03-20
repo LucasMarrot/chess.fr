@@ -9,7 +9,7 @@ export const BUTTON_FEEDBACK = {
       dark: 'primaryDark' as const,
     },
   },
-  checkerCellSize: 8,
+  checkerCellSize: 10,
   checkerMaxOpacity: 0.32,
   checkerTotalDurationMs: 520,
   checkerSpreadRatio: 0.7,
