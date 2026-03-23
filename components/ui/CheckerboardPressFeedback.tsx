@@ -1,5 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, LayoutChangeEvent, StyleSheet } from 'react-native';
+import { memo, useEffect, useMemo, useState } from 'react';
+import { LayoutChangeEvent, StyleSheet } from 'react-native';
+import Animated, {
+  Easing,
+  Extrapolation,
+  SharedValue,
+  cancelAnimation,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { getTokens } from 'tamagui';
 import { BUTTON_FEEDBACK, CheckerTokenKey } from '@/constants/button-feedback';
 
@@ -16,8 +26,78 @@ type GridCell = {
   col: number;
   left: number;
   top: number;
-  sequenceDelayMs: number;
+  isLightCell: boolean;
+  start: number;
+  peak: number;
+  settle1: number;
+  settle2: number;
+  end: number;
+  fadeEnd: number;
 };
+
+type CheckerCellProps = {
+  cell: GridCell;
+  cellSize: number;
+  lightColor: string;
+  darkColor: string;
+  progress: SharedValue<number>;
+};
+
+const CheckerCell = memo(function CheckerCell({
+  cell,
+  cellSize,
+  lightColor,
+  darkColor,
+  progress,
+}: CheckerCellProps) {
+  const cellColor = cell.isLightCell ? lightColor : darkColor;
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      progress.value,
+      [0, cell.start, cell.peak, cell.end, cell.fadeEnd, 1],
+      [0, 0, BUTTON_FEEDBACK.checkerMaxOpacity, BUTTON_FEEDBACK.checkerMaxOpacity, 0, 0],
+      Extrapolation.CLAMP,
+    );
+
+    const scale = interpolate(
+      progress.value,
+      [0, cell.start, cell.peak, cell.settle1, cell.settle2, cell.end, cell.fadeEnd, 1],
+      [
+        0,
+        BUTTON_FEEDBACK.checkerScaleMin,
+        BUTTON_FEEDBACK.checkerBouncePeakScale,
+        BUTTON_FEEDBACK.checkerBounceSettleScale1,
+        BUTTON_FEEDBACK.checkerBounceSettleScale2,
+        BUTTON_FEEDBACK.checkerScaleMax,
+        BUTTON_FEEDBACK.checkerScaleMax,
+        BUTTON_FEEDBACK.checkerScaleMax,
+      ],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      opacity,
+      transform: [{ scale }],
+    };
+  }, [cell]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.cell,
+        {
+          width: cellSize,
+          height: cellSize,
+          left: cell.left,
+          top: cell.top,
+          backgroundColor: cellColor,
+        },
+        animatedStyle,
+      ]}
+    />
+  );
+});
 
 export function CheckerboardPressFeedback({
   playSignal,
@@ -26,9 +106,19 @@ export function CheckerboardPressFeedback({
   darkTokenKey = BUTTON_FEEDBACK.checkerTokens.darkSurface.dark,
 }: CheckerboardPressFeedbackProps) {
   const [layout, setLayout] = useState({ width: 0, height: 0 });
-  const progress = useRef(new Animated.Value(0)).current;
-  const runningAnimationRef = useRef<Animated.CompositeAnimation | null>(null);
-  const cellSize = BUTTON_FEEDBACK.checkerCellSize;
+  const progress = useSharedValue(0);
+  const baseCellSize = BUTTON_FEEDBACK.checkerCellSize;
+  const maxCells = BUTTON_FEEDBACK.checkerMaxCells;
+
+  const cellSize = useMemo(() => {
+    const { width, height } = layout;
+    if (width <= 0 || height <= 0) return baseCellSize;
+
+    const area = width * height;
+    const adaptiveSize = Math.ceil(Math.sqrt(area / maxCells));
+    return Math.max(baseCellSize, adaptiveSize);
+  }, [baseCellSize, layout, maxCells]);
+
   const cols = Math.max(1, Math.ceil(layout.width / cellSize));
   const rows = Math.max(1, Math.ceil(layout.height / cellSize));
 
@@ -39,7 +129,10 @@ export function CheckerboardPressFeedback({
       BUTTON_FEEDBACK.checkerTotalDurationMs * BUTTON_FEEDBACK.checkerSpreadRatio,
     );
 
-    const unsortedCells: (Omit<GridCell, 'sequenceDelayMs'> & {
+    const unsortedCells: (Omit<
+      GridCell,
+      'isLightCell' | 'start' | 'peak' | 'settle1' | 'settle2' | 'end' | 'fadeEnd'
+    > & {
       distance: number;
     })[] = [];
     for (let row = 0; row < rows; row++) {
@@ -66,40 +159,62 @@ export function CheckerboardPressFeedback({
 
     const stepMs = ordered.length > 1 ? spreadMs / (ordered.length - 1) : spreadMs;
 
-    return ordered.map((cell, index) => ({
-      id: cell.id,
-      row: cell.row,
-      col: cell.col,
-      left: cell.left,
-      top: cell.top,
-      sequenceDelayMs: Math.min(spreadMs, Math.round(index * stepMs)),
-    }));
-  }, [cellSize, cols, rows]);
+    const totalMs = BUTTON_FEEDBACK.checkerTotalDurationMs;
+    const activeMs = Math.max(60, totalMs - spreadMs);
+    const peakMs = Math.round(activeMs * BUTTON_FEEDBACK.checkerPeakRatio);
+    const settle1Ms = Math.round(activeMs * BUTTON_FEEDBACK.checkerSettle1Ratio);
+    const settle2Ms = Math.round(activeMs * BUTTON_FEEDBACK.checkerSettle2Ratio);
+    const endMs = activeMs;
 
-  useEffect(() => {
-    return () => {
-      runningAnimationRef.current?.stop();
-    };
-  }, []);
+    return ordered.map((cell, index) => {
+      const sequenceDelayMs = Math.min(spreadMs, Math.round(index * stepMs));
+      const rawStart = sequenceDelayMs / totalMs;
+      const rawPeak = (sequenceDelayMs + peakMs) / totalMs;
+      const rawSettle1 = (sequenceDelayMs + settle1Ms) / totalMs;
+      const rawSettle2 = (sequenceDelayMs + settle2Ms) / totalMs;
+      const rawEnd = (sequenceDelayMs + endMs) / totalMs;
+
+      const start = Math.min(1, Math.max(0, rawStart));
+      const peak = Math.min(1, Math.max(start, rawPeak));
+      const settle1 = Math.min(1, Math.max(peak, rawSettle1));
+      const settle2 = Math.min(1, Math.max(settle1, rawSettle2));
+      const end = Math.min(1, Math.max(settle2, rawEnd));
+      const fadeEnd = Math.min(1, end + (1 - end) * BUTTON_FEEDBACK.checkerFadeTailRatio);
+
+      return {
+        id: cell.id,
+        row: cell.row,
+        col: cell.col,
+        left: cell.left,
+        top: cell.top,
+        isLightCell: (cell.row + cell.col) % 2 === 0,
+        start,
+        peak,
+        settle1,
+        settle2,
+        end,
+        fadeEnd,
+      };
+    });
+  }, [cellSize, cols, rows]);
 
   useEffect(() => {
     if (playSignal === 0 || cells.length === 0) return;
 
-    runningAnimationRef.current?.stop();
-    progress.setValue(0);
-
-    const nextAnimation = Animated.timing(progress, {
-      toValue: 1,
-      duration: BUTTON_FEEDBACK.checkerTotalDurationMs,
-      easing: Easing.linear,
-      useNativeDriver: true,
-    });
-
-    runningAnimationRef.current = nextAnimation;
-    nextAnimation.start(() => {
-      runningAnimationRef.current = null;
-      progress.setValue(0);
-    });
+    cancelAnimation(progress);
+    progress.value = 0;
+    progress.value = withTiming(
+      1,
+      {
+        duration: BUTTON_FEEDBACK.checkerTotalDurationMs,
+        easing: Easing.linear,
+      },
+      (finished) => {
+        if (finished) {
+          progress.value = 0;
+        }
+      },
+    );
   }, [cells.length, playSignal, progress]);
 
   const tokens = getTokens();
@@ -108,9 +223,10 @@ export function CheckerboardPressFeedback({
 
   const handleLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
-    if (width !== layout.width || height !== layout.height) {
-      setLayout({ width, height });
-    }
+    setLayout((prev) => {
+      if (width === prev.width && height === prev.height) return prev;
+      return { width, height };
+    });
   };
 
   return (
@@ -125,75 +241,16 @@ export function CheckerboardPressFeedback({
         },
       ]}
     >
-      {cells.map((cell) => {
-        const totalMs = BUTTON_FEEDBACK.checkerTotalDurationMs;
-        const spreadMs = Math.round(totalMs * BUTTON_FEEDBACK.checkerSpreadRatio);
-        const activeMs = Math.max(60, totalMs - spreadMs);
-        const rawStart = cell.sequenceDelayMs / totalMs;
-        const peakMs = Math.round(activeMs * BUTTON_FEEDBACK.checkerPeakRatio);
-        const settle1Ms = Math.round(activeMs * BUTTON_FEEDBACK.checkerSettle1Ratio);
-        const settle2Ms = Math.round(activeMs * BUTTON_FEEDBACK.checkerSettle2Ratio);
-        const endMs = activeMs;
-
-        const rawPeak = (cell.sequenceDelayMs + peakMs) / totalMs;
-        const rawSettle1 = (cell.sequenceDelayMs + settle1Ms) / totalMs;
-        const rawSettle2 = (cell.sequenceDelayMs + settle2Ms) / totalMs;
-        const rawEnd = (cell.sequenceDelayMs + endMs) / totalMs;
-
-        const start = Math.min(1, Math.max(0, rawStart));
-        const peak = Math.min(1, Math.max(start, rawPeak));
-        const settle1 = Math.min(1, Math.max(peak, rawSettle1));
-        const settle2 = Math.min(1, Math.max(settle1, rawSettle2));
-        const end = Math.min(1, Math.max(settle2, rawEnd));
-        const fadeEnd = Math.min(1, end + (1 - end) * BUTTON_FEEDBACK.checkerFadeTailRatio);
-
-        const opacity = progress.interpolate({
-          inputRange: [0, start, peak, end, fadeEnd, 1],
-          outputRange: [
-            0,
-            0,
-            BUTTON_FEEDBACK.checkerMaxOpacity,
-            BUTTON_FEEDBACK.checkerMaxOpacity,
-            0,
-            0,
-          ],
-          extrapolate: 'clamp',
-        });
-
-        const scale = progress.interpolate({
-          inputRange: [0, start, peak, settle1, settle2, end, fadeEnd, 1],
-          outputRange: [
-            0,
-            BUTTON_FEEDBACK.checkerScaleMin,
-            BUTTON_FEEDBACK.checkerBouncePeakScale,
-            BUTTON_FEEDBACK.checkerBounceSettleScale1,
-            BUTTON_FEEDBACK.checkerBounceSettleScale2,
-            BUTTON_FEEDBACK.checkerScaleMax,
-            BUTTON_FEEDBACK.checkerScaleMax,
-            BUTTON_FEEDBACK.checkerScaleMax,
-          ],
-          extrapolate: 'clamp',
-        });
-        const cellColor = (cell.row + cell.col) % 2 === 0 ? lightPink : darkPink;
-
-        return (
-          <Animated.View
-            key={cell.id}
-            style={[
-              styles.cell,
-              {
-                width: cellSize,
-                height: cellSize,
-                left: cell.left,
-                top: cell.top,
-                backgroundColor: cellColor,
-                opacity,
-                transform: [{ scale }],
-              },
-            ]}
-          />
-        );
-      })}
+      {cells.map((cell) => (
+        <CheckerCell
+          key={cell.id}
+          cell={cell}
+          cellSize={cellSize}
+          lightColor={lightPink}
+          darkColor={darkPink}
+          progress={progress}
+        />
+      ))}
     </Animated.View>
   );
 }

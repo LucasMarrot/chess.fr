@@ -10,6 +10,7 @@ export const BUTTON_FEEDBACK = {
     },
   },
   checkerCellSize: 10,
+  checkerMaxCells: 180,
   checkerMaxOpacity: 0.32,
   checkerTotalDurationMs: 520,
   checkerSpreadRatio: 0.7,
