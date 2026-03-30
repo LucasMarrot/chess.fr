@@ -1,0 +1,32 @@
+export type HistoryRow = {
+  moveNumber: number;
+  white: string;
+  black: string;
+};
+
+export type LocalGameTheme = {
+  light: string;
+  dark: string;
+  primary: string;
+  interactionGrey: string;
+  primaryDark: string;
+  danger: string;
+  dangerDark: string;
+  boardWoodLight: string;
+  boardWoodDark: string;
+  buttonPrimaryBorder: string;
+  buttonSecondaryHover: string;
+  moveOptionQuietFill: string;
+  moveOptionCaptureFill: string;
+  activeClockBackground: string;
+  historyHeaderBackground: string;
+  promotionOptionBackground: string;
+  overlayBackdrop: string;
+  endOverlayBackdrop: string;
+  captureFlashBorder: string;
+  captureFlashBackground: string;
+  lastMoveFromBackground: string;
+  lastMoveToBackground: string;
+  checkBorder: string;
+  checkmateBackground: string;
+};

@@ -22,7 +22,12 @@ export function Avatar({ seed, size = 64 }: AvatarProps) {
 
   return (
     <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
-      <SvgXml accessibilityLabel={`Avatar for ${seed}`} xml={avatarXml} width={size} height={size} />
+      <SvgXml
+        accessibilityLabel={`Avatar for ${seed}`}
+        xml={avatarXml}
+        width={size}
+        height={size}
+      />
     </View>
   );
 }
