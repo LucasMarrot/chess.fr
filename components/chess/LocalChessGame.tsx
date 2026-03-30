@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWindowDimensions } from 'react-native';
-import Animated, {
+import { scheduleOnRN } from 'react-native-worklets';
+import {
   Easing,
-  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -204,7 +204,7 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
         },
         (finished) => {
           if (!finished) return;
-          runOnJS(setCaptureFlashSquare)(null);
+          scheduleOnRN(setCaptureFlashSquare, null);
         },
       ),
     );

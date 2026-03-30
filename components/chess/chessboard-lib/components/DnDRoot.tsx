@@ -8,7 +8,7 @@ import type {
   GestureUpdateEvent,
   PanGestureHandlerEventPayload,
 } from 'react-native-gesture-handler';
-import { runOnJS } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import type { ChessboardDnDProviderProps } from '../types';
 
 type DragState = {
@@ -163,7 +163,7 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
           info: { activeId: UniqueIdentifier; activeLayout: LayoutRectangle },
         ) => {
           'worklet';
-          runOnJS(handleBegin)(e, info);
+          scheduleOnRN(handleBegin, e, info);
         }}
         onUpdate={(
           e: GestureUpdateEvent<PanGestureHandlerEventPayload>,
@@ -174,11 +174,11 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
           },
         ) => {
           'worklet';
-          runOnJS(handleUpdate)(e, meta);
+          scheduleOnRN(handleUpdate, e, meta);
         }}
         onDragEnd={(e: { active: ItemOptions; over: ItemOptions | null }) => {
           'worklet';
-          runOnJS(handleDragEnd)(e);
+          scheduleOnRN(handleDragEnd, e);
         }}
       >
         {children}

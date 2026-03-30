@@ -1,5 +1,34 @@
 import type { FC, ReactElement, ReactNode, Ref, RefObject } from 'react';
 
+export type FenPosition =
+  | 'P'
+  | 'p'
+  | 'R'
+  | 'r'
+  | 'N'
+  | 'n'
+  | 'B'
+  | 'b'
+  | 'Q'
+  | 'q'
+  | 'K'
+  | 'k'
+  | '8';
+
+export type Piece =
+  | 'wp'
+  | 'wr'
+  | 'wn'
+  | 'wb'
+  | 'wq'
+  | 'wk'
+  | 'bp'
+  | 'br'
+  | 'bn'
+  | 'bb'
+  | 'bq'
+  | 'bk';
+
 export type Square =
   | 'a8'
   | 'b8'
@@ -65,20 +94,6 @@ export type Square =
   | 'f1'
   | 'g1'
   | 'h1';
-
-export type Piece =
-  | 'wP'
-  | 'wB'
-  | 'wN'
-  | 'wR'
-  | 'wQ'
-  | 'wK'
-  | 'bP'
-  | 'bB'
-  | 'bN'
-  | 'bR'
-  | 'bQ'
-  | 'bK';
 
 export type BoardPosition = { [square in Square]?: Piece };
 
