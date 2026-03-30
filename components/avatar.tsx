@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { createAvatar } from '@dicebear/core';
 import { lorelei } from '@dicebear/collection';
-import { SvgXml } from 'react-native-svg';
+import SvgXml from 'react-native-svg';
 
 type AvatarProps = {
   seed: string;
