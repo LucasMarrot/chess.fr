@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { createAvatar } from '@dicebear/core';
 import { lorelei } from '@dicebear/collection';
-import SvgXml from 'react-native-svg';
+import { SvgXml } from 'react-native-svg';
+import { getTokens } from 'tamagui';
 
 type AvatarProps = {
   seed: string;
@@ -10,6 +11,9 @@ type AvatarProps = {
 };
 
 export function Avatar({ seed, size = 64 }: AvatarProps) {
+  const tokens = getTokens();
+  const backgroundColor = tokens.color.light.val;
+
   const avatarXml = useMemo(() => {
     return createAvatar(lorelei, {
       seed: seed.trim() || 'User',
@@ -21,7 +25,15 @@ export function Avatar({ seed, size = 64 }: AvatarProps) {
   }, [seed, size]);
 
   return (
-    <View style={[styles.container, { width: size, height: size, borderRadius: size / 2 }]}>
+    <View
+      style={{
+        width: size,
+        height: size,
+        borderRadius: size / 2,
+        overflow: 'hidden',
+        backgroundColor,
+      }}
+    >
       <SvgXml
         accessibilityLabel={`Avatar for ${seed}`}
         xml={avatarXml}
@@ -31,10 +43,3 @@ export function Avatar({ seed, size = 64 }: AvatarProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    overflow: 'hidden',
-    backgroundColor: '#ffffff',
-  },
-});

@@ -9,6 +9,7 @@ import {
   type LocalTimeControlPreset,
   type LocalTimeControlPresetKey,
 } from '@/constants/local-time-controls';
+import { AppHeader } from '@/components/headers/AppHeader';
 
 const styles = StyleSheet.create({
   modalBackdrop: {
@@ -43,6 +44,7 @@ export default function HomeScreen() {
   const tokens = getTokens();
   const router = useRouter();
   const [isPickerVisible, setIsPickerVisible] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   function launchLocalGame(timeControl: LocalTimeControlPreset) {
     setIsPickerVisible(false);
@@ -55,59 +57,73 @@ export default function HomeScreen() {
   }
 
   return (
-    <View flex={1} backgroundColor="$background" justifyContent="center" alignItems="center" p="$4">
-      <YStack width="100%" maxWidth={360} alignItems="center" gap="$4">
-        <ChessButton variant="primary" size="lg" fullWidth onPress={() => setIsPickerVisible(true)}>
-          Jouer une partie
-        </ChessButton>
-      </YStack>
-
-      {isPickerVisible ? (
-        <Pressable style={styles.modalBackdrop} onPress={() => setIsPickerVisible(false)}>
-          <Pressable
-            style={[
-              styles.modalCard,
-              {
-                backgroundColor: tokens.color.light.val,
-                borderColor: tokens.color.buttonPrimaryBorder.val,
-              },
-            ]}
-            onPress={() => {}}
+    <>
+      <AppHeader />
+      <View
+        flex={1}
+        backgroundColor="$background"
+        justifyContent="center"
+        alignItems="center"
+        p="$4"
+      >
+        <YStack width="100%" maxWidth={360} alignItems="center" gap="$4">
+          <ChessButton
+            variant="primary"
+            size="lg"
+            fullWidth
+            onPress={() => setIsPickerVisible(true)}
           >
-            <Text color={tokens.color.dark.val} fontSize="$5" fontWeight="700">
-              Choisir une cadence
-            </Text>
-            <Text color={tokens.color.interactionGrey.val} fontSize="$3">
-              Lance une partie locale 2 joueurs sur le meme ecran.
-            </Text>
+            Jouer une partie
+          </ChessButton>
+        </YStack>
 
-            {LOCAL_TIME_CONTROLS.map((control) => (
-              <Pressable
-                key={control.key}
-                onPress={() => launchLocalGame(control)}
-                style={[
-                  styles.timeControlCard,
-                  {
-                    borderColor: tokens.color.buttonPrimaryBorder.val,
-                    backgroundColor: tokens.color.light.val,
-                  },
-                ]}
-              >
-                <Text color={tokens.color.dark.val} fontWeight="700" fontSize="$4">
-                  {control.label}
-                </Text>
-                <Text color={tokens.color.interactionGrey.val} fontSize="$2">
-                  {control.description}
-                </Text>
-              </Pressable>
-            ))}
+        {isPickerVisible ? (
+          <Pressable style={styles.modalBackdrop} onPress={() => setIsPickerVisible(false)}>
+            <Pressable
+              style={[
+                styles.modalCard,
+                {
+                  backgroundColor: tokens.color.light.val,
+                  borderColor: tokens.color.buttonPrimaryBorder.val,
+                },
+              ]}
+              onPress={() => {}}
+            >
+              <Text color={tokens.color.dark.val} fontSize="$5" fontWeight="700">
+                Choisir une cadence
+              </Text>
+              <Text color={tokens.color.interactionGrey.val} fontSize="$3">
+                Lance une partie locale 2 joueurs sur le meme ecran.
+              </Text>
 
-            <ChessButton variant="secondary" size="md" onPress={() => setIsPickerVisible(false)}>
-              Annuler
-            </ChessButton>
+              {LOCAL_TIME_CONTROLS.map((control) => (
+                <Pressable
+                  key={control.key}
+                  onPress={() => launchLocalGame(control)}
+                  style={[
+                    styles.timeControlCard,
+                    {
+                      borderColor: tokens.color.buttonPrimaryBorder.val,
+                      backgroundColor: tokens.color.light.val,
+                    },
+                  ]}
+                >
+                  <Text color={tokens.color.dark.val} fontWeight="700" fontSize="$4">
+                    {control.label}
+                  </Text>
+                  <Text color={tokens.color.interactionGrey.val} fontSize="$2">
+                    {control.description}
+                  </Text>
+                </Pressable>
+              ))}
+
+              <ChessButton variant="secondary" size="md" onPress={() => setIsPickerVisible(false)}>
+                Annuler
+              </ChessButton>
+            </Pressable>
           </Pressable>
-        </Pressable>
-      ) : null}
-    </View>
+        ) : null}
+      </View>
+    </>
   );
 }
