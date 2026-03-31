@@ -2,7 +2,7 @@ import React from 'react';
 import { useWindowDimensions, StyleSheet } from 'react-native';
 import { XStack, YStack, styled } from 'tamagui';
 import { ChessButton } from '@/components/ui/ChessButton';
-import { BlurView } from 'expo-blur'; // L'outil magique pour l'effet premium
+import { BlurView } from 'expo-blur'; 
 
 type QuickPlayBarProps = {
   onPlayOnline?: () => void;
@@ -26,7 +26,6 @@ export default function QuickPlayBar({ onPlayOnline, onPlayLocal }: QuickPlayBar
   }
 
   return (
-    // BlurView remplace la couleur de fond solide
     <BlurView intensity={20} tint="light" style={styles.blurWrapper}>
       <Container>
         <YStack flex={1}>
