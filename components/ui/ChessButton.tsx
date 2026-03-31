@@ -19,6 +19,7 @@ interface ChessButtonProps {
   loading?: boolean;
   fullWidth?: boolean;
   iconLeft?: React.ReactNode;
+  textProps?: React.ComponentProps<typeof Text>;
 }
 
 export const ChessButton = ({
@@ -30,6 +31,7 @@ export const ChessButton = ({
   loading = false,
   fullWidth = false,
   iconLeft,
+  textProps,
 }: ChessButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [feedbackSignal, setFeedbackSignal] = useState(0);
@@ -169,6 +171,7 @@ export const ChessButton = ({
               fontFamily="$body"
               fontWeight="600"
               fontSize={buttonSize.textSize}
+              {...textProps}
             >
               {children}
             </Text>

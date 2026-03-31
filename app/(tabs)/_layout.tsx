@@ -3,13 +3,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 import { Home, User } from 'lucide-react-native';
 import { Button, Text, View, XStack, YStack, styled, useTheme } from 'tamagui';
+import QuickPlayBar from '@/components/QuickPlayBar';
 
 type TabKey = 'jouer' | 'profil';
 
 const Container = styled(XStack, {
   width: '100%',
   backgroundColor: '$light',
-  height: 84,
+  height: 80,
   justifyContent: 'center',
   alignItems: 'center',
   gap: '$15',
@@ -110,7 +111,7 @@ function TabsBar({
   const theme = useTheme();
   const indicatorX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = 56;
-  
+
   const [tabLayouts, setTabLayouts] = useState<Record<TabKey, any>>({ jouer: null, profil: null });
 
   useEffect(() => {
@@ -129,41 +130,37 @@ function TabsBar({
   }, [activeTab, tabLayouts, indicatorWidth, indicatorX]);
 
   return (
-    <Container style={{ position: 'relative' }}>
-      <Animated.View
-        style={[
-          styles.indicator,
-          {
-            backgroundColor: theme.dark.val,
-            transform: [{ translateX: indicatorX }],
-          },
-        ]}
-      />
-      
-      {/* On utilise une View autour du bouton pour récupérer le onLayout sans erreur TS */}
-      <View onLayout={(e) => setTabLayouts(prev => ({ ...prev, jouer: e.nativeEvent.layout }))}>
-        <TabButton 
-          onPress={onPressHome} 
-          chromeless 
-          active={activeTab === 'jouer'}
-        >
-          <HomeIcon active={activeTab === 'jouer'} />
-          <Label active={activeTab === 'jouer'}>HOME</Label>
-        </TabButton>
-      </View>
+    <YStack>
+      {activeTab === 'jouer' ? <QuickPlayBar /> : null}
+      <Container style={{ position: 'relative' }}>
+        <Animated.View
+          style={[
+            styles.indicator,
+            {
+              backgroundColor: theme.dark.val,
+              transform: [{ translateX: indicatorX }],
+            },
+          ]}
+        />
 
-      <View onLayout={(e) => setTabLayouts(prev => ({ ...prev, profil: e.nativeEvent.layout }))}>
-        <TabButton 
-          onPress={onPressProfil} 
-          chromeless 
-          active={activeTab === 'profil'}
+        {/* On utilise une View autour du bouton pour récupérer le onLayout sans erreur TS */}
+        <View onLayout={(e) => setTabLayouts((prev) => ({ ...prev, jouer: e.nativeEvent.layout }))}>
+          <TabButton onPress={onPressHome} chromeless active={activeTab === 'jouer'}>
+            <HomeIcon active={activeTab === 'jouer'} />
+            <Label active={activeTab === 'jouer'}>HOME</Label>
+          </TabButton>
+        </View>
+
+        <View
+          onLayout={(e) => setTabLayouts((prev) => ({ ...prev, profil: e.nativeEvent.layout }))}
         >
-          <ProfileIcon active={activeTab === 'profil'} />
-          <Label active={activeTab === 'profil'}>PROFIL</Label>
-        </TabButton>
-      </View>
-      
-    </Container>
+          <TabButton onPress={onPressProfil} chromeless active={activeTab === 'profil'}>
+            <ProfileIcon active={activeTab === 'profil'} />
+            <Label active={activeTab === 'profil'}>PROFIL</Label>
+          </TabButton>
+        </View>
+      </Container>
+    </YStack>
   );
 }
 

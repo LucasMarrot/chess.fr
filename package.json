@@ -25,6 +25,7 @@
     "@tamagui/animations-reanimated": "^2.0.0-rc.26",
     "@tamagui/config": "^2.0.0-rc.26",
     "expo": "~54.0.33",
+    "expo-blur": "~15.0.8",
     "expo-constants": "~18.0.13",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
