@@ -14,20 +14,14 @@ import { useShallow } from 'zustand/react/shallow';
 import type { LocalTimeControlPreset } from '@/constants/local-time-controls';
 
 import type { ClearPremoves } from './ChessBoard';
+import { LocalGameActionBar } from './local-game/LocalGameActionBar';
 import { LocalGameBoardSection } from './local-game/LocalGameBoardSection';
-import { LocalGameHistoryPanel } from './local-game/LocalGameHistoryPanel';
+import { LocalGameClock } from './local-game/LocalGameClock';
 import { LocalGamePromotionOverlay } from './local-game/LocalGamePromotionOverlay';
 import { LocalGameResultOverlay } from './local-game/LocalGameResultOverlay';
-import { LocalGameStatusCard } from './local-game/LocalGameStatusCard';
 import { localGameStyles } from './local-game/styles';
 import type { LocalGameTheme } from './local-game/types';
-import {
-  colorToLabel,
-  getSquareTopLeft,
-  resultReasonToLabel,
-  toHistoryRows,
-  withAlpha,
-} from './local-game/utils';
+import { getSquareTopLeft, resolveClockLayout, withAlpha } from './local-game/utils';
 import type { Piece, Square } from './chessboard-lib/types';
 import { getPromotionOptions, useLocalChessGameStore } from './stores/use-local-chess-game-store';
 import { useLocalChessUiStore } from './stores/use-local-chess-ui-store';
@@ -39,6 +33,7 @@ type LocalChessGameProps = {
 
 export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => {
   const chessboardRef = useRef<ClearPremoves>(null);
+  const lastFlipTapAtRef = useRef(0);
   const tokens = getTokens();
   const { width } = useWindowDimensions();
 
@@ -80,7 +75,7 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     result,
     pendingPromotion,
     config,
-    moveHistory,
+    setAutoFlip,
     lastMove,
     whiteKingSquare,
     blackKingSquare,
@@ -102,7 +97,7 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
       result: state.result,
       pendingPromotion: state.pendingPromotion,
       config: state.config,
-      moveHistory: state.moveHistory,
+      setAutoFlip: state.setAutoFlip,
       lastMove: state.lastMove,
       whiteKingSquare: state.whiteKingSquare,
       blackKingSquare: state.blackKingSquare,
@@ -118,27 +113,17 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     })),
   );
 
-  const {
-    selectedSquare,
-    optionSquares,
-    isHistoryCollapsed,
-    selectSquare,
-    showMoveOptions,
-    clearSelection,
-    toggleHistoryCollapsed,
-    resetUi,
-  } = useLocalChessUiStore(
-    useShallow((state) => ({
-      selectedSquare: state.selectedSquare,
-      optionSquares: state.optionSquares,
-      isHistoryCollapsed: state.isHistoryCollapsed,
-      selectSquare: state.selectSquare,
-      showMoveOptions: state.showMoveOptions,
-      clearSelection: state.clearSelection,
-      toggleHistoryCollapsed: state.toggleHistoryCollapsed,
-      resetUi: state.resetUi,
-    })),
-  );
+  const { selectedSquare, optionSquares, selectSquare, showMoveOptions, clearSelection, resetUi } =
+    useLocalChessUiStore(
+      useShallow((state) => ({
+        selectedSquare: state.selectedSquare,
+        optionSquares: state.optionSquares,
+        selectSquare: state.selectSquare,
+        showMoveOptions: state.showMoveOptions,
+        clearSelection: state.clearSelection,
+        resetUi: state.resetUi,
+      })),
+    );
 
   const [captureFlashSquare, setCaptureFlashSquare] = useState<Square | null>(null);
 
@@ -156,8 +141,6 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     }),
     [uiTheme.moveOptionCaptureFill, uiTheme.moveOptionQuietFill, uiTheme.primaryDark],
   );
-
-  const historyRows = useMemo(() => toHistoryRows(moveHistory), [moveHistory]);
 
   const promotionOptions = useMemo(() => {
     if (!pendingPromotion) return [];
@@ -367,19 +350,6 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     return true;
   };
 
-  const statusMessage = useMemo(() => {
-    if (result) {
-      if (result.outcome === 'win' && result.winner) {
-        return `Victoire ${colorToLabel(result.winner)} - ${resultReasonToLabel(result.reason)}`;
-      }
-      return `Partie nulle - ${resultReasonToLabel(result.reason)}`;
-    }
-
-    if (status === 'checkmate') return 'Echec et mat';
-    if (status === 'check') return 'Echec';
-    return `Trait aux ${colorToLabel(turn)}`;
-  }, [result, status, turn]);
-
   const captureSquareBox = useMemo(() => {
     if (!captureFlashSquare) return null;
     return getSquareTopLeft(captureFlashSquare, boardOrientation, boardSize);
@@ -395,19 +365,43 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     resetGame();
   };
 
+  const handleFlipPress = () => {
+    const now = Date.now();
+    const isDoubleTap = now - lastFlipTapAtRef.current <= 280;
+
+    if (isDoubleTap) {
+      setAutoFlip(true);
+      lastFlipTapAtRef.current = 0;
+      return;
+    }
+
+    lastFlipTapAtRef.current = now;
+    flipBoard();
+  };
+
+  const { topClock, bottomClock } = useMemo(
+    () =>
+      resolveClockLayout({
+        boardOrientation,
+        autoFlip: config.autoFlip,
+        whiteMs: clocks.whiteMs,
+        blackMs: clocks.blackMs,
+        isWhiteActive,
+        isBlackActive,
+      }),
+    [
+      boardOrientation,
+      clocks.blackMs,
+      clocks.whiteMs,
+      config.autoFlip,
+      isBlackActive,
+      isWhiteActive,
+    ],
+  );
+
   return (
     <View style={localGameStyles.container}>
-      <LocalGameStatusCard
-        timeControlLabel={timeControl.label}
-        statusMessage={statusMessage}
-        whiteMs={clocks.whiteMs}
-        blackMs={clocks.blackMs}
-        isWhiteActive={isWhiteActive}
-        isBlackActive={isBlackActive}
-        onFlipBoard={flipBoard}
-        onExit={onExit}
-        theme={uiTheme}
-      />
+      <LocalGameClock clock={{ ...topClock, color: 'black' }} theme={uiTheme} />
 
       <LocalGameBoardSection
         chessboardRef={chessboardRef}
@@ -425,11 +419,12 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
         isDraggablePiece={handleIsDraggablePiece}
       />
 
-      <LocalGameHistoryPanel
-        rows={historyRows}
-        isCollapsed={isHistoryCollapsed}
-        onToggleCollapse={toggleHistoryCollapsed}
-        theme={uiTheme}
+      <LocalGameClock clock={{ ...bottomClock, color: 'white' }} theme={uiTheme} />
+
+      <LocalGameActionBar
+        isAutoFlipEnabled={config.autoFlip}
+        onExitPress={onExit}
+        onFlipPress={handleFlipPress}
       />
 
       <LocalGamePromotionOverlay

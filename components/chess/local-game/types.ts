@@ -30,3 +30,10 @@ export type LocalGameTheme = {
   checkBorder: string;
   checkmateBackground: string;
 };
+
+export type LocalGameClockModel = {
+  color: 'black' | 'white';
+  clockMs: number;
+  isActive: boolean;
+  isUpsideDown: boolean;
+};

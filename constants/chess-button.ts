@@ -1,4 +1,4 @@
-export type ChessButtonVariant = 'primary' | 'secondary';
+export type ChessButtonVariant = 'primary' | 'secondary' | 'rounded';
 export type ChessButtonSize = 'sm' | 'md' | 'lg' | 'icon';
 export type ChessButtonTextSize = '$3' | '$4' | '$5';
 export type ChessButtonTokenColor =
@@ -91,6 +91,21 @@ export const CHESS_BUTTON_VARIANTS: Record<ChessButtonVariant, ChessButtonVarian
       shadowOffsetY: 2,
       bottomWidth: 3,
       pressTranslateY: 2,
+    },
+  },
+  rounded: {
+    surfaceToken: 'light',
+    textToken: 'dark',
+    hoverToken: 'buttonSecondaryHover',
+    depth: {
+      borderColorToken: 'buttonSecondaryBorder',
+      borderTopSideColorToken: 'buttonSecondaryBorderTop',
+      edgeColorToken: 'buttonSecondaryEdge',
+      shadowOpacity: 0.18,
+      shadowRadius: 3,
+      shadowOffsetY: 1,
+      bottomWidth: 2,
+      pressTranslateY: 1,
     },
   },
 };

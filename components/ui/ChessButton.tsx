@@ -42,6 +42,7 @@ export const ChessButton = ({
   const isActionDisabled = disabled || loading;
   const buttonSize = CHESS_BUTTON_SIZES[size];
   const variantConfig = CHESS_BUTTON_VARIANTS[variant];
+  const borderRadius = variant === 'rounded' ? 999 : CHESS_BUTTON_INTERACTION.radiusToken;
   const depth = variantConfig.depth;
   const backgroundColor = tokens.color[variantConfig.surfaceToken].val;
   const textColor = tokens.color[variantConfig.textToken].val;
@@ -87,7 +88,7 @@ export const ChessButton = ({
       onPressOut={() => {
         setIsPressed(false);
       }}
-      borderRadius={CHESS_BUTTON_INTERACTION.radiusToken}
+      borderRadius={borderRadius}
       height={buttonSize.height}
       paddingHorizontal={
         size === 'icon'

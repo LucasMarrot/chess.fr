@@ -3,10 +3,11 @@ import { StyleSheet } from 'react-native';
 export const localGameStyles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 20,
-    paddingHorizontal: 12,
-    paddingBottom: 12,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     position: 'relative',
+    gap: 12,
   },
   boardArea: {
     alignItems: 'center',
@@ -15,7 +16,7 @@ export const localGameStyles = StyleSheet.create({
   },
   boardFrame: {
     position: 'relative',
-    borderRadius: 16,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   captureFlash: {
@@ -26,11 +27,6 @@ export const localGameStyles = StyleSheet.create({
   },
   statusCard: {
     width: '100%',
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    gap: 10,
   },
   historyPanel: {
     width: '100%',
@@ -97,10 +93,19 @@ export const localGameStyles = StyleSheet.create({
     gap: 12,
   },
   clockCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 12,
+    width: 200,
+    borderWidth: 2,
+    borderRadius: 10,
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+  },
+  actionsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
   },
 });

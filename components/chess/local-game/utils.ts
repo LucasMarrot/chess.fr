@@ -2,7 +2,7 @@ import type { BoardOrientation, Square } from '../chessboard-lib/types';
 import type { LocalGameResultReason } from '../stores/use-local-chess-game-store';
 export { withAlpha } from '../utils';
 
-import type { HistoryRow } from './types';
+import type { HistoryRow, LocalGameClockModel } from './types';
 
 export function formatClock(ms: number): string {
   const clamped = Math.max(0, ms);
@@ -70,4 +70,74 @@ export function toHistoryRows(history: string[]): HistoryRow[] {
   }
 
   return rows;
+}
+
+type ResolveClockLayoutInput = {
+  boardOrientation: BoardOrientation;
+  autoFlip: boolean;
+  whiteMs: number;
+  blackMs: number;
+  isWhiteActive: boolean;
+  isBlackActive: boolean;
+};
+
+export function resolveClockLayout({
+  boardOrientation,
+  autoFlip,
+  whiteMs,
+  blackMs,
+  isWhiteActive,
+  isBlackActive,
+}: ResolveClockLayoutInput): {
+  topClock: LocalGameClockModel;
+  bottomClock: LocalGameClockModel;
+} {
+  if (autoFlip) {
+    return {
+      topClock: {
+        label: 'Noirs',
+        clockMs: blackMs,
+        isActive: isBlackActive,
+        isUpsideDown: false,
+      },
+      bottomClock: {
+        label: 'Blancs',
+        clockMs: whiteMs,
+        isActive: isWhiteActive,
+        isUpsideDown: false,
+      },
+    };
+  }
+
+  if (boardOrientation === 'white') {
+    return {
+      topClock: {
+        label: 'Noirs',
+        clockMs: blackMs,
+        isActive: isBlackActive,
+        isUpsideDown: true,
+      },
+      bottomClock: {
+        label: 'Blancs',
+        clockMs: whiteMs,
+        isActive: isWhiteActive,
+        isUpsideDown: false,
+      },
+    };
+  }
+
+  return {
+    topClock: {
+      label: 'Blancs',
+      clockMs: whiteMs,
+      isActive: isWhiteActive,
+      isUpsideDown: true,
+    },
+    bottomClock: {
+      label: 'Noirs',
+      clockMs: blackMs,
+      isActive: isBlackActive,
+      isUpsideDown: false,
+    },
+  };
 }
