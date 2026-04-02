@@ -1,6 +1,8 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, Animated, Easing } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 import { Text, View, YStack, getTokens } from 'tamagui';
 
 import { ChessButton } from '@/components/ui/ChessButton';
