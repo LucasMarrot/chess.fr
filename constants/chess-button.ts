@@ -1,5 +1,5 @@
-export type ChessButtonVariant = 'primary' | 'secondary' | 'rounded';
-export type ChessButtonSize = 'sm' | 'md' | 'lg' | 'icon';
+export type ChessButtonVariant = 'primary' | 'secondary' | 'rounded' | 'selectableCard';
+export type ChessButtonSize = 'sm' | 'md' | 'lg' | 'icon' | 'iconLg';
 export type ChessButtonTextSize = '$3' | '$4' | '$5';
 export type ChessButtonTokenColor =
   | 'dark'
@@ -44,6 +44,7 @@ export const CHESS_BUTTON_SIZES: Record<ChessButtonSize, ChessButtonSizeConfig> 
   md: { height: 48, horizontalPadding: 18, textSize: '$4', iconSize: 18 },
   lg: { height: 56, horizontalPadding: 22, textSize: '$5', iconSize: 20 },
   icon: { height: 40, horizontalPadding: 10, textSize: '$3', iconSize: 18 },
+  iconLg: { height: 68, horizontalPadding: 12, textSize: '$4', iconSize: 22 },
 };
 
 export const CHESS_BUTTON_INTERACTION = {
@@ -102,6 +103,21 @@ export const CHESS_BUTTON_VARIANTS: Record<ChessButtonVariant, ChessButtonVarian
       borderTopSideColorToken: 'buttonSecondaryBorderTop',
       edgeColorToken: 'buttonSecondaryEdge',
       shadowOpacity: 0.18,
+      shadowRadius: 3,
+      shadowOffsetY: 1,
+      bottomWidth: 2,
+      pressTranslateY: 1,
+    },
+  },
+  selectableCard: {
+    surfaceToken: 'light',
+    textToken: 'dark',
+    hoverToken: 'buttonSecondaryHover',
+    depth: {
+      borderColorToken: 'buttonSecondaryBorder',
+      borderTopSideColorToken: 'buttonSecondaryBorderTop',
+      edgeColorToken: 'buttonSecondaryEdge',
+      shadowOpacity: 0.14,
       shadowRadius: 3,
       shadowOffsetY: 1,
       bottomWidth: 2,

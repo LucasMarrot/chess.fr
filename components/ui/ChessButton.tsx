@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Button, Spinner, Text, XStack, YStack, getTokens } from 'tamagui';
+import { Button, Spinner, Text, XStack, YStack, getTokens, styled } from 'tamagui';
 import { BUTTON_FEEDBACK } from '@/constants/button-feedback';
 import {
   CHESS_BUTTON_INTERACTION,
@@ -10,9 +10,13 @@ import {
 } from '@/constants/chess-button';
 import { CheckerboardPressFeedback } from '@/components/ui/CheckerboardPressFeedback';
 
+type ChessButtonShape = 'default' | 'circle';
+
 interface ChessButtonProps {
   variant?: ChessButtonVariant;
   size?: ChessButtonSize;
+  shape?: ChessButtonShape;
+  selected?: boolean;
   children?: React.ReactNode;
   onPress?: () => void;
   disabled?: boolean;
@@ -22,9 +26,39 @@ interface ChessButtonProps {
   textProps?: React.ComponentProps<typeof Text>;
 }
 
+const StyledChessButton = styled(Button, {
+  name: 'ChessButton',
+  unstyled: true,
+  alignItems: 'center',
+  justifyContent: 'center',
+  position: 'relative',
+  overflow: 'hidden',
+  variants: {
+    fullWidth: {
+      true: {
+        width: '100%',
+      },
+    },
+    shape: {
+      default: {},
+      circle: {
+        borderRadius: 999,
+      },
+    },
+  } as const,
+});
+
+const StyledButtonLabel = styled(Text, {
+  name: 'ChessButtonLabel',
+  fontFamily: '$body',
+  fontWeight: '600',
+});
+
 export const ChessButton = ({
   variant = 'primary',
   size = 'md',
+  shape = 'default',
+  selected = false,
   children,
   onPress,
   disabled = false,
@@ -43,15 +77,23 @@ export const ChessButton = ({
   const isInteractionDisabled = disabled;
   const isActionDisabled = disabled || loading;
   const buttonSize = CHESS_BUTTON_SIZES[size];
+  const isIconOnly = size === 'icon' || size === 'iconLg';
   const variantConfig = CHESS_BUTTON_VARIANTS[variant];
-  const borderRadius = variant === 'rounded' ? 999 : CHESS_BUTTON_INTERACTION.radiusToken;
+  const useSelectedPalette = selected && (variant === 'selectableCard' || shape === 'circle');
+  const borderRadius =
+    shape === 'circle' || variant === 'rounded' ? 999 : CHESS_BUTTON_INTERACTION.radiusToken;
   const depth = variantConfig.depth;
-  const backgroundColor = tokens.color[variantConfig.surfaceToken].val;
-  const textColor = tokens.color[variantConfig.textToken].val;
-  const hoverColor = tokens.color[variantConfig.hoverToken].val;
-  const borderColor = tokens.color[depth.borderColorToken].val;
-  const borderTopSideColor = tokens.color[depth.borderTopSideColorToken].val;
-  const edgeColor = tokens.color[depth.edgeColorToken].val;
+  const backgroundColor =
+    tokens.color[useSelectedPalette ? 'dark' : variantConfig.surfaceToken].val;
+  const textColor = tokens.color[useSelectedPalette ? 'light' : variantConfig.textToken].val;
+  const hoverColor =
+    tokens.color[useSelectedPalette ? 'buttonPrimaryHover' : variantConfig.hoverToken].val;
+  const borderColor =
+    tokens.color[useSelectedPalette ? 'buttonPrimaryBorder' : depth.borderColorToken].val;
+  const borderTopSideColor =
+    tokens.color[useSelectedPalette ? 'buttonPrimaryBorderTop' : depth.borderTopSideColorToken].val;
+  const edgeColor =
+    tokens.color[useSelectedPalette ? 'buttonPrimaryEdge' : depth.edgeColorToken].val;
 
   const colors = useMemo(() => {
     return {
@@ -76,13 +118,14 @@ export const ChessButton = ({
   ]);
 
   return (
-    <Button
-      unstyled
+    <StyledChessButton
       onPress={() => {
         if (isActionDisabled) return;
         onPress?.();
       }}
+      shape={shape}
       disabled={isInteractionDisabled}
+      fullWidth={shape === 'circle' ? false : fullWidth}
       onPressIn={() => {
         setIsPressed(true);
         setFeedbackSignal((value) => value + 1);
@@ -93,17 +136,13 @@ export const ChessButton = ({
       borderRadius={borderRadius}
       height={buttonSize.height}
       paddingHorizontal={
-        size === 'icon'
+        isIconOnly || shape === 'circle'
           ? CHESS_BUTTON_INTERACTION.iconHorizontalPaddingWhenIconOnly
           : buttonSize.horizontalPadding
       }
-      width={fullWidth ? '100%' : undefined}
-      minWidth={size === 'icon' ? buttonSize.height : undefined}
+      width={shape === 'circle' ? buttonSize.height : undefined}
+      minWidth={isIconOnly || shape === 'circle' ? buttonSize.height : undefined}
       cursor={isActionDisabled ? BUTTON_FEEDBACK.cursorDisabled : BUTTON_FEEDBACK.cursorPointer}
-      alignItems="center"
-      justifyContent="center"
-      position="relative"
-      overflow="hidden"
       backgroundColor={colors.backgroundColor}
       borderWidth={CHESS_BUTTON_INTERACTION.borderWidth}
       borderColor={colors.borderColor}
@@ -145,17 +184,17 @@ export const ChessButton = ({
       <CheckerboardPressFeedback
         playSignal={feedbackSignal}
         bleedHorizontal={
-          size === 'icon'
+          isIconOnly || shape === 'circle'
             ? CHESS_BUTTON_INTERACTION.iconHorizontalPaddingWhenIconOnly
             : buttonSize.horizontalPadding
         }
         lightTokenKey={
-          variant === 'primary'
+          useSelectedPalette || variant === 'primary'
             ? BUTTON_FEEDBACK.checkerTokens.darkSurface.light
             : BUTTON_FEEDBACK.checkerTokens.lightSurface.light
         }
         darkTokenKey={
-          variant === 'primary'
+          useSelectedPalette || variant === 'primary'
             ? BUTTON_FEEDBACK.checkerTokens.darkSurface.dark
             : BUTTON_FEEDBACK.checkerTokens.lightSurface.dark
         }
@@ -165,20 +204,27 @@ export const ChessButton = ({
         <Spinner color={accentColor} size="small" />
       ) : (
         <XStack alignItems="center" justifyContent="center" gap="$2">
-          {iconLeft ? <YStack width={buttonSize.iconSize}>{iconLeft}</YStack> : null}
-          {size !== 'icon' ? (
-            <Text
+          {iconLeft ? (
+            <YStack
+              width={buttonSize.iconSize}
+              height={buttonSize.iconSize}
+              alignItems="center"
+              justifyContent="center"
+            >
+              {iconLeft}
+            </YStack>
+          ) : null}
+          {!isIconOnly ? (
+            <StyledButtonLabel
               color={colors.textColor}
-              fontFamily="$body"
-              fontWeight="600"
               fontSize={buttonSize.textSize}
               {...textProps}
             >
               {children}
-            </Text>
+            </StyledButtonLabel>
           ) : null}
         </XStack>
       )}
-    </Button>
+    </StyledChessButton>
   );
 };

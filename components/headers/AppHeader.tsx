@@ -50,7 +50,9 @@ export function AppHeader({ centerContent, leftContent, showBorder = true }: App
       >
         {leftContent && <View>{leftContent}</View>}
 
-        <View flex={1}>{centerContent}</View>
+        <View position="absolute" left="50%" transform={[{ translateX: '-50%' }]}>
+          {centerContent}
+        </View>
 
         <ProfileMenu
           name={profile.name}
