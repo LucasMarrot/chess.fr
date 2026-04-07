@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router';
+import { router, Tabs } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 import { Home, User } from 'lucide-react-native';
@@ -131,7 +131,9 @@ function TabsBar({
 
   return (
     <YStack>
-      {activeTab === 'jouer' ? <QuickPlayBar /> : null}
+      {activeTab === 'jouer' ? (
+        <QuickPlayBar onPlayLocal={() => router.push('/local-game/config')} />
+      ) : null}
       <Container style={{ position: 'relative' }}>
         <Animated.View
           style={[
@@ -143,7 +145,6 @@ function TabsBar({
           ]}
         />
 
-        {/* On utilise une View autour du bouton pour récupérer le onLayout sans erreur TS */}
         <View onLayout={(e) => setTabLayouts((prev) => ({ ...prev, jouer: e.nativeEvent.layout }))}>
           <TabButton onPress={onPressHome} chromeless active={activeTab === 'jouer'}>
             <HomeIcon active={activeTab === 'jouer'} />
