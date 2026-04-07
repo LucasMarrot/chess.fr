@@ -27,10 +27,20 @@ export function AppHeader({ centerContent, leftContent, showBorder = true }: App
   }
 
   const insets = useSafeAreaInsets();
+  const horizontalPadding = 12;
+  const verticalPadding = 8;
+  const profileButtonWidth = PROFILE_UI.avatarButton.size + PROFILE_UI.avatarButton.padding * 2 + 2;
+  const sideSlotWidth = profileButtonWidth;
+  const shouldCenterProfile = !centerContent && !leftContent;
 
-  const paddingHorizontal = 12;
-  const paddingVertical = 8;
-  const avatarSize = PROFILE_UI.avatarButton.size;
+  const profileMenu = (
+    <ProfileMenu
+      name={profile.name}
+      email={profile.email}
+      isSigningOut={isSigningOut}
+      onSignOut={handleSignOut}
+    />
+  );
 
   return (
     <View
@@ -38,28 +48,25 @@ export function AppHeader({ centerContent, leftContent, showBorder = true }: App
       borderBottomColor={showBorder ? '$borderColor' : undefined}
       backgroundColor="$background"
       paddingTop={insets.top}
-      padding={paddingVertical}
     >
       <XStack
-        height={avatarSize + paddingVertical * 2}
-        paddingHorizontal={paddingHorizontal}
-        paddingVertical={paddingVertical}
+        minHeight={PROFILE_UI.avatarButton.size + verticalPadding * 2}
+        paddingHorizontal={horizontalPadding}
+        paddingVertical={verticalPadding}
         alignItems="center"
-        justifyContent="space-between"
         gap="$3"
       >
-        {leftContent && <View>{leftContent}</View>}
+        <View width={sideSlotWidth} alignItems="flex-start" justifyContent="center">
+          {leftContent}
+        </View>
 
-        <View position="absolute" left="50%" transform={[{ translateX: '-50%' }]}>
+        <View flex={1} alignItems="center" justifyContent="center">
           {centerContent}
         </View>
 
-        <ProfileMenu
-          name={profile.name}
-          email={profile.email}
-          isSigningOut={isSigningOut}
-          onSignOut={handleSignOut}
-        />
+        <View width={sideSlotWidth} alignItems="flex-end" justifyContent="center">
+          {profileMenu}
+        </View>
       </XStack>
     </View>
   );

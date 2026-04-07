@@ -44,7 +44,7 @@ export const CHESS_BUTTON_SIZES: Record<ChessButtonSize, ChessButtonSizeConfig> 
   md: { height: 48, horizontalPadding: 18, textSize: '$4', iconSize: 18 },
   lg: { height: 56, horizontalPadding: 22, textSize: '$5', iconSize: 20 },
   icon: { height: 40, horizontalPadding: 10, textSize: '$3', iconSize: 18 },
-  iconLg: { height: 68, horizontalPadding: 12, textSize: '$4', iconSize: 22 },
+  iconLg: { height: 68, horizontalPadding: 12, textSize: '$4', iconSize: 28 },
 };
 
 export const CHESS_BUTTON_INTERACTION = {

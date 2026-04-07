@@ -34,6 +34,13 @@ export const LOCAL_TIME_CONTROLS: LocalTimeControlPreset[] = [
     incrementSeconds: 0,
   },
   {
+    key: '1_2',
+    label: '1|2',
+    description: '1 minute + 2 secondes par coup',
+    baseMinutes: 1,
+    incrementSeconds: 2,
+  },
+  {
     key: '3_2',
     label: '3|2',
     description: '3 minutes + 2 secondes par coup',

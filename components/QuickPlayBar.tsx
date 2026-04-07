@@ -2,7 +2,7 @@ import React from 'react';
 import { useWindowDimensions, StyleSheet } from 'react-native';
 import { XStack, YStack, styled } from 'tamagui';
 import { ChessButton } from '@/components/ui/ChessButton';
-import { BlurView } from 'expo-blur'; 
+import { BlurView } from 'expo-blur';
 
 type QuickPlayBarProps = {
   onPlayOnline?: () => void;
@@ -20,6 +20,7 @@ const Container = styled(XStack, {
 export default function QuickPlayBar({ onPlayOnline, onPlayLocal }: QuickPlayBarProps) {
   const { width } = useWindowDimensions();
   const isDesktop = width > 768;
+  const isCompactMobile = width <= 360;
 
   if (isDesktop) {
     return null;
@@ -31,10 +32,19 @@ export default function QuickPlayBar({ onPlayOnline, onPlayLocal }: QuickPlayBar
         <YStack flex={1}>
           <ChessButton
             variant="primary"
-            size="lg"
+            size={isCompactMobile ? 'md' : 'lg'}
             fullWidth
             onPress={onPlayOnline}
-            textProps={{ fontFamily: '$body', fontWeight: '400', textTransform: 'none' }}
+            textProps={{
+              fontFamily: '$body',
+              fontWeight: '400',
+              textTransform: 'none',
+              fontSize: isCompactMobile ? '$3' : '$4',
+              numberOfLines: 1,
+              adjustsFontSizeToFit: true,
+              minimumFontScale: 0.85,
+              textAlign: 'center',
+            }}
           >
             Jouer en ligne
           </ChessButton>
@@ -42,10 +52,19 @@ export default function QuickPlayBar({ onPlayOnline, onPlayLocal }: QuickPlayBar
         <YStack flex={1}>
           <ChessButton
             variant="secondary"
-            size="lg"
+            size={isCompactMobile ? 'md' : 'lg'}
             fullWidth
             onPress={onPlayLocal}
-            textProps={{ fontFamily: '$body', fontWeight: '400', textTransform: 'none' }}
+            textProps={{
+              fontFamily: '$body',
+              fontWeight: '400',
+              textTransform: 'none',
+              fontSize: isCompactMobile ? '$3' : '$4',
+              numberOfLines: 1,
+              adjustsFontSizeToFit: true,
+              minimumFontScale: 0.85,
+              textAlign: 'center',
+            }}
           >
             Jouer en local
           </ChessButton>

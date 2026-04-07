@@ -109,10 +109,12 @@ function TabsBar({
   onPressProfil: () => void;
 }) {
   const theme = useTheme();
-  const indicatorX = useRef(new Animated.Value(0)).current;
   const indicatorWidth = 56;
+  const indicatorX = useRef(new Animated.Value(-indicatorWidth - 24)).current;
 
-  const [tabLayouts, setTabLayouts] = useState<Record<TabKey, any>>({ jouer: null, profil: null });
+  const [tabLayouts, setTabLayouts] = useState<Record<TabKey, { x: number; width: number } | null>>(
+    { jouer: null, profil: null },
+  );
 
   useEffect(() => {
     const activeLayout = tabLayouts[activeTab];
@@ -145,7 +147,12 @@ function TabsBar({
           ]}
         />
 
-        <View onLayout={(e) => setTabLayouts((prev) => ({ ...prev, jouer: e.nativeEvent.layout }))}>
+        <View
+          onLayout={(e) => {
+            const layout = e.nativeEvent.layout;
+            setTabLayouts((prev) => ({ ...prev, jouer: layout }));
+          }}
+        >
           <TabButton onPress={onPressHome} chromeless active={activeTab === 'jouer'}>
             <HomeIcon active={activeTab === 'jouer'} />
             <Label active={activeTab === 'jouer'}>HOME</Label>
@@ -153,7 +160,10 @@ function TabsBar({
         </View>
 
         <View
-          onLayout={(e) => setTabLayouts((prev) => ({ ...prev, profil: e.nativeEvent.layout }))}
+          onLayout={(e) => {
+            const layout = e.nativeEvent.layout;
+            setTabLayouts((prev) => ({ ...prev, profil: layout }));
+          }}
         >
           <TabButton onPress={onPressProfil} chromeless active={activeTab === 'profil'}>
             <ProfileIcon active={activeTab === 'profil'} />

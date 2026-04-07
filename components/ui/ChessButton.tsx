@@ -74,8 +74,8 @@ export const ChessButton = ({
   const darkColor = tokens.color.dark.val;
   const accentColor = tokens.color.primary.val;
 
-  const isInteractionDisabled = disabled;
-  const isActionDisabled = disabled || loading;
+  const isInteractionDisabled = disabled || loading;
+  const isActionDisabled = isInteractionDisabled;
   const buttonSize = CHESS_BUTTON_SIZES[size];
   const isIconOnly = size === 'icon' || size === 'iconLg';
   const variantConfig = CHESS_BUTTON_VARIANTS[variant];
@@ -127,10 +127,12 @@ export const ChessButton = ({
       disabled={isInteractionDisabled}
       fullWidth={shape === 'circle' ? false : fullWidth}
       onPressIn={() => {
+        if (isInteractionDisabled) return;
         setIsPressed(true);
         setFeedbackSignal((value) => value + 1);
       }}
       onPressOut={() => {
+        if (isInteractionDisabled) return;
         setIsPressed(false);
       }}
       borderRadius={borderRadius}

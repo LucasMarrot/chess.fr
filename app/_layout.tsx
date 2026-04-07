@@ -1,10 +1,10 @@
+import '@tamagui/native/setup-zeego';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { TamaguiProvider } from 'tamagui';
 import tamaguiConfig from '@/tamagui.config';
 import { supabase } from '@/lib/supabase';
@@ -15,7 +15,6 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [session, setSession] = useState<Session | null>(null);
   const [initialized, setInitialized] = useState(false);
 
@@ -51,7 +50,7 @@ export default function RootLayout() {
       // Session présente -> redirection vers l'app
       router.replace('/(tabs)');
     }
-  }, [session, initialized, segments]);
+  }, [session, initialized, segments, router]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

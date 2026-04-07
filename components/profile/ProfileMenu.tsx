@@ -80,7 +80,9 @@ export function ProfileMenu({ name, email, isSigningOut, onSignOut }: ProfileMen
 
 const styles = StyleSheet.create({
   root: {
-    ...StyleSheet.absoluteFillObject,
+    width: PROFILE_UI.avatarButton.size + PROFILE_UI.avatarButton.padding * 2 + 2,
+    height: PROFILE_UI.avatarButton.size + PROFILE_UI.avatarButton.padding * 2 + 2,
+    position: 'relative',
     zIndex: 30,
   },
   backdrop: {
@@ -89,8 +91,8 @@ const styles = StyleSheet.create({
   },
   profileWrapper: {
     position: 'absolute',
-    top: PROFILE_UI.menu.wrapperTop,
-    right: PROFILE_UI.menu.wrapperRight,
+    top: 0,
+    right: 0,
     zIndex: 20,
     alignItems: 'flex-end',
   },
