@@ -95,13 +95,13 @@ export function resolveClockLayout({
   if (autoFlip) {
     return {
       topClock: {
-        label: 'Noirs',
+        color: 'black',
         clockMs: blackMs,
         isActive: isBlackActive,
         isUpsideDown: false,
       },
       bottomClock: {
-        label: 'Blancs',
+        color: 'white',
         clockMs: whiteMs,
         isActive: isWhiteActive,
         isUpsideDown: false,
@@ -112,13 +112,13 @@ export function resolveClockLayout({
   if (boardOrientation === 'white') {
     return {
       topClock: {
-        label: 'Noirs',
+        color: 'black',
         clockMs: blackMs,
         isActive: isBlackActive,
         isUpsideDown: true,
       },
       bottomClock: {
-        label: 'Blancs',
+        color: 'white',
         clockMs: whiteMs,
         isActive: isWhiteActive,
         isUpsideDown: false,
@@ -128,13 +128,13 @@ export function resolveClockLayout({
 
   return {
     topClock: {
-      label: 'Blancs',
+      color: 'white',
       clockMs: whiteMs,
       isActive: isWhiteActive,
       isUpsideDown: true,
     },
     bottomClock: {
-      label: 'Noirs',
+      color: 'black',
       clockMs: blackMs,
       isActive: isBlackActive,
       isUpsideDown: false,

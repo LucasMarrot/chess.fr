@@ -1,102 +1,83 @@
-import { useEffect, useMemo, useState } from 'react';
-
-import {
-  Clock1,
-  Clock2,
-  Clock3,
-  Clock4,
-  Clock5,
-  Clock6,
-  Clock7,
-  Clock8,
-  Clock9,
-  Clock10,
-  Clock11,
-  Clock12,
-} from 'lucide-react-native';
-import Animated, {
-  Easing,
-  cancelAnimation,
-  runOnJS,
-  useAnimatedReaction,
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withTiming,
-} from 'react-native-reanimated';
+import { View } from 'tamagui';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 type AnimatedClockIconProps = {
   isActive: boolean;
+  fillRatio: number;
   color: string;
+  needleColor: string;
   size?: number;
   strokeWidth?: number;
 };
 
-const CLOCK_ICONS = [
-  Clock1,
-  Clock2,
-  Clock3,
-  Clock4,
-  Clock5,
-  Clock6,
-  Clock7,
-  Clock8,
-  Clock9,
-  Clock10,
-  Clock11,
-  Clock12,
-] as const;
-
 export const AnimatedClockIcon = ({
   isActive,
+  fillRatio,
   color,
+  needleColor,
   size = 22,
   strokeWidth = 2.2,
 }: AnimatedClockIconProps) => {
-  const progress = useSharedValue(0);
-  const [iconIndex, setIconIndex] = useState(0);
+  const ratio = Math.max(0, Math.min(1, fillRatio));
+  const canvasSize = 100;
+  const center = 50;
+  const ringRadius = 40;
+  const ringStrokeWidth = strokeWidth * 3.2 + 10;
+  const trackOpacity = isActive ? 0.26 : 0.2;
+  const progressOpacity = 1;
+  const startAngle = -90;
+  const elapsedRatio = 1 - ratio;
+  const sweepAngle = ratio * 360;
+  const arcStartAngle = startAngle + elapsedRatio * 360;
 
-  useEffect(() => {
-    if (isActive) {
-      progress.value = withRepeat(
-        withTiming(12, {
-          duration: 12000,
-          easing: Easing.linear,
-        }),
-        -1,
-        false,
-      );
-      return;
+  const toCartesian = (angle: number, radius: number) => {
+    const radians = (angle * Math.PI) / 180;
+    return {
+      x: center + radius * Math.cos(radians),
+      y: center + radius * Math.sin(radians),
+    };
+  };
+
+  const buildArcPath = (angle: number, fromAngle: number) => {
+    if (angle <= 0) return '';
+    if (angle >= 359.999) {
+      return `M ${center} ${center - ringRadius} a ${ringRadius} ${ringRadius} 0 1 1 0 ${
+        2 * ringRadius
+      } a ${ringRadius} ${ringRadius} 0 1 1 0 -${2 * ringRadius}`;
     }
 
-    cancelAnimation(progress);
-    progress.value = 0;
-    setIconIndex(0);
-  }, [isActive, progress]);
+    const start = toCartesian(fromAngle, ringRadius);
+    const end = toCartesian(fromAngle + angle, ringRadius);
+    const largeArcFlag = angle > 180 ? 1 : 0;
 
-  useAnimatedReaction(
-    () => Math.floor(progress.value) % 12,
-    (next, prev) => {
-      if (next !== prev) {
-        runOnJS(setIconIndex)(next);
-      }
-    },
-    [],
-  );
+    return `M ${start.x} ${start.y} A ${ringRadius} ${ringRadius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
+  };
 
-  const animatedStyle = useAnimatedStyle(() => {
-    const rotation = progress.value * 30;
-    return {
-      transform: [{ rotate: `${rotation}deg` }],
-      opacity: isActive ? 1 : 0.85,
-    };
-  }, [isActive]);
-
-  const ClockIcon = useMemo(() => CLOCK_ICONS[iconIndex], [iconIndex]);
+  const progressPath = buildArcPath(sweepAngle, arcStartAngle);
 
   return (
-    <Animated.View style={animatedStyle}>
-      <ClockIcon color={color} size={size} strokeWidth={strokeWidth} />
-    </Animated.View>
+    <View opacity={1}>
+      <Svg width={size} height={size} viewBox={`0 0 ${canvasSize} ${canvasSize}`}>
+        <Circle
+          cx={center}
+          cy={center}
+          r={ringRadius}
+          fill="none"
+          stroke={color}
+          strokeWidth={ringStrokeWidth}
+          strokeOpacity={trackOpacity}
+        />
+        {progressPath ? (
+          <Path
+            d={progressPath}
+            fill="none"
+            stroke={needleColor}
+            strokeWidth={ringStrokeWidth}
+            strokeLinecap="round"
+            strokeOpacity={progressOpacity}
+          />
+        ) : null}
+      </Svg>
+    </View>
   );
 };
