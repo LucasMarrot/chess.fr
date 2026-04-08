@@ -36,7 +36,7 @@ const tokens = createTokens({
     light: '#FFFAFB',
     primary: '#FAE0E4',
     primaryDark: '#D893A2',
-    danger: '#C62828',
+    danger: '#B93638',
     dangerDark: '#7F1D1D',
     boardWoodLight: '#EBD8B5',
     boardWoodDark: '#B88B5D',

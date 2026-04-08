@@ -43,6 +43,8 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
       dark: String(tokens.color.dark.val),
       primary: String(tokens.color.primary.val),
       interactionGrey: String(tokens.color.interactionGrey.val),
+      buttonPrimaryHover: String(tokens.color.buttonPrimaryHover.val),
+      buttonSecondaryBorder: String(tokens.color.buttonSecondaryBorder.val),
       primaryDark: String(tokens.color.primaryDark.val),
       danger: String(tokens.color.danger.val),
       dangerDark: String(tokens.color.dangerDark.val),
@@ -130,7 +132,7 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
   const boardSize = useMemo(() => {
     const maxWidth = 560;
     const minWidth = 270;
-    return Math.max(minWidth, Math.min(width - 24, maxWidth));
+    return Math.max(minWidth - 20, Math.min(width - 24, maxWidth) - 20);
   }, [width]);
 
   const optionPalette = useMemo(
@@ -398,28 +400,56 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
       isWhiteActive,
     ],
   );
+  const baseClockMs = timeControl.baseMinutes * 60 * 1000;
+  const isCompactScreen = width <= 390;
+  const topClockOffset = isCompactScreen ? -54 : -64;
+  const bottomClockOffset = isCompactScreen ? -54 : -64;
+  const boardClusterMarginTop = isCompactScreen ? 30 : 38;
+  const boardClusterMarginBottom = isCompactScreen ? 52 : 64;
 
   return (
     <View style={localGameStyles.container}>
-      <LocalGameClock clock={{ ...topClock, color: 'black' }} theme={uiTheme} />
+      <View
+        style={[
+          localGameStyles.boardCluster,
+          {
+            width: boardSize,
+            height: boardSize,
+            marginTop: boardClusterMarginTop,
+            marginBottom: boardClusterMarginBottom,
+          },
+        ]}
+      >
+        <LocalGameBoardSection
+          chessboardRef={chessboardRef}
+          boardSize={boardSize}
+          fen={fen}
+          boardOrientation={boardOrientation}
+          autoPromoteToQueen={config.autoPromoteToQueen}
+          customBoardStyle={boardStyle}
+          customSquareStyles={customSquareStyles}
+          captureSquareBox={captureSquareBox}
+          capturePulseStyle={capturePulseStyle}
+          theme={uiTheme}
+          onPieceDrop={handleBoardPieceDrop}
+          onSquareClick={handleBoardSquareClick}
+          isDraggablePiece={handleIsDraggablePiece}
+        />
 
-      <LocalGameBoardSection
-        chessboardRef={chessboardRef}
-        boardSize={boardSize}
-        fen={fen}
-        boardOrientation={boardOrientation}
-        autoPromoteToQueen={config.autoPromoteToQueen}
-        customBoardStyle={boardStyle}
-        customSquareStyles={customSquareStyles}
-        captureSquareBox={captureSquareBox}
-        capturePulseStyle={capturePulseStyle}
-        theme={uiTheme}
-        onPieceDrop={handleBoardPieceDrop}
-        onSquareClick={handleBoardSquareClick}
-        isDraggablePiece={handleIsDraggablePiece}
-      />
+        <View
+          style={[localGameStyles.topClockAnchor, { top: topClockOffset }]}
+          pointerEvents="none"
+        >
+          <LocalGameClock clock={topClock} totalMs={baseClockMs} />
+        </View>
 
-      <LocalGameClock clock={{ ...bottomClock, color: 'white' }} theme={uiTheme} />
+        <View
+          style={[localGameStyles.bottomClockAnchor, { bottom: bottomClockOffset }]}
+          pointerEvents="none"
+        >
+          <LocalGameClock clock={bottomClock} totalMs={baseClockMs} />
+        </View>
+      </View>
 
       <LocalGameActionBar
         isAutoFlipEnabled={config.autoFlip}

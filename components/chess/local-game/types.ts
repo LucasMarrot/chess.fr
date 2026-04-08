@@ -9,6 +9,8 @@ export type LocalGameTheme = {
   dark: string;
   primary: string;
   interactionGrey: string;
+  buttonPrimaryHover: string;
+  buttonSecondaryBorder: string;
   primaryDark: string;
   danger: string;
   dangerDark: string;

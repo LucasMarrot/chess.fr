@@ -14,6 +14,20 @@ export const localGameStyles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
   },
+  boardCluster: {
+    position: 'relative',
+    alignSelf: 'center',
+  },
+  topClockAnchor: {
+    position: 'absolute',
+    zIndex: 8,
+    left: 0,
+  },
+  bottomClockAnchor: {
+    position: 'absolute',
+    zIndex: 8,
+    right: 0,
+  },
   boardFrame: {
     position: 'relative',
     borderRadius: 4,
@@ -93,13 +107,10 @@ export const localGameStyles = StyleSheet.create({
     gap: 12,
   },
   clockCard: {
-    width: 200,
-    borderWidth: 2,
     borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
+    borderWidth: 1,
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
   },
   actionsRow: {
     width: '100%',
