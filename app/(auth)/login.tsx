@@ -1,119 +1,114 @@
 import React, { useState } from 'react';
-import { Alert } from 'react-native';
-import { Button, Input, Spinner, Text, YStack } from 'tamagui';
+import { Text, YStack } from 'tamagui';
+import { Link } from 'expo-router';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
 import { ChessButton } from '@/components/ui/ChessButton';
+import { FormInput } from '@/components/ui/FormInput';
+import { loginSchema, LoginFormValues } from '@/lib/validations/auth';
+import { useToastController } from '@tamagui/toast';
+import { ChessLink } from '@/components/ui/ChessLink';
 
 export default function LoginScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
+  const toast = useToastController();
 
-  async function handleSignIn() {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    getValues,
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
+
+  async function onSubmit(data: LoginFormValues) {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password,
+      email: data.email.trim(),
+      password: data.password,
     });
-    if (error) Alert.alert('Erreur', error.message);
+
+    if (error) {
+      toast.show('Erreur de connexion', { message: error.message });
+    }
     setLoading(false);
   }
 
-  async function handleSignUp() {
-    if (password !== confirmPassword) {
-      Alert.alert('Erreur', 'Les mots de passe ne correspondent pas.');
+  async function handleForgotPassword() {
+    const email = getValues('email');
+    if (!email) {
+      toast.show('Attention', {
+        message:
+          'Veuillez entrer votre email dans le champ prévu à cet effet pour réinitialiser le mot de passe.',
+      });
       return;
     }
 
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email: email.trim(),
-      password,
-    });
-
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
     if (error) {
-      Alert.alert('Erreur', error.message);
-    } else if (!data.session) {
-      Alert.alert('Vérifiez vos emails', 'Un lien de confirmation vous a été envoyé.');
+      toast.show('Erreur', { message: error.message });
+    } else {
+      toast.show('Email envoyé', { message: 'Un lien de réinitialisation vous a été envoyé.' });
     }
-
     setLoading(false);
   }
 
   return (
-    <YStack flex={1} justifyContent="center" padding="$6" gap="$4" backgroundColor="$background">
-      <YStack gap="$2" marginBottom="$4">
-        <Text fontSize="$9" fontWeight="700" textAlign="center">
-          Chess.fr
-        </Text>
-        <Text fontSize="$4" textAlign="center" opacity={0.7}>
-          {isSignUp ? 'Créez votre compte joueur' : 'Bon retour parmi nous'}
-        </Text>
+    <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
+      {/* Conteneur principal à 80% centré */}
+      <YStack width="80%" maxWidth={400} gap="$5">
+        <YStack gap="$2" marginBottom="$4" alignItems="center">
+          <Text fontSize="$9" fontWeight="700">
+            Chess.fr
+          </Text>
+        </YStack>
+
+        <YStack gap="$3">
+          <FormInput
+            name="email"
+            control={control}
+            label="Email"
+            keyboardType="email-address"
+            error={errors.email?.message}
+          />
+
+          <FormInput
+            name="password"
+            control={control}
+            label="Mot de passe"
+            secureTextEntry
+            error={errors.password?.message}
+          />
+        </YStack>
+
+        <ChessLink
+          href="/forgot-password"
+          disabled={loading}
+          className="text-[5px] inline-block text-left"
+        >
+          Mot de passe oublié ?
+        </ChessLink>
+
+        <YStack gap="$3" marginTop="$2">
+          <ChessButton
+            loading={loading}
+            variant="primary"
+            size="lg"
+            fullWidth
+            onPress={handleSubmit(onSubmit)}
+          >
+            Se connecter
+          </ChessButton>
+
+          <ChessButton href="/register" variant="ghost" size="sm" fullWidth disabled={loading}>
+            Pas de compte ? Créer un profil
+          </ChessButton>
+        </YStack>
       </YStack>
-
-      <YStack gap="$2">
-        <Text fontSize="$4" fontWeight="600">
-          Email
-        </Text>
-        <Input
-          value={email}
-          onChangeText={setEmail}
-          placeholder="votre@email.com"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          size="$5"
-        />
-
-        <Text fontSize="$4" fontWeight="600">
-          Mot de passe
-        </Text>
-        <Input
-          value={password}
-          onChangeText={setPassword}
-          placeholder="********"
-          secureTextEntry
-          autoCapitalize="none"
-          size="$5"
-        />
-
-        {isSignUp && (
-          <>
-            <Text fontSize="$4" fontWeight="600">
-              Confirmer le mot de passe
-            </Text>
-            <Input
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              placeholder="********"
-              secureTextEntry
-              autoCapitalize="none"
-              size="$5"
-            />
-          </>
-        )}
-      </YStack>
-
-      <ChessButton
-        loading={loading}
-        variant="primary"
-        size="lg"
-        disabled={loading}
-        onPress={isSignUp ? handleSignUp : handleSignIn}
-      >
-        {isSignUp ? "S'inscrire" : 'Se connecter'}
-      </ChessButton>
-
-      <ChessButton
-        loading={loading}
-        variant="secondary"
-        size="sm"
-        disabled={loading}
-        onPress={() => setIsSignUp((prev) => !prev)}
-      >
-        {isSignUp ? 'Déjà un compte ? Se connecter' : 'Pas de compte ? Créer un profil'}
-      </ChessButton>
     </YStack>
   );
 }

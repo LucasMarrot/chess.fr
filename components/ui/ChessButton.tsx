@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Button, Spinner, Text, XStack, YStack, getTokens } from 'tamagui';
 import { BUTTON_FEEDBACK } from '@/constants/button-feedback';
 import {
@@ -9,6 +9,7 @@ import {
   ChessButtonVariant,
 } from '@/constants/chess-button';
 import { CheckerboardPressFeedback } from '@/components/ui/CheckerboardPressFeedback';
+import { useRouter, type Href } from 'expo-router';
 
 interface ChessButtonProps {
   variant?: ChessButtonVariant;
@@ -19,20 +20,34 @@ interface ChessButtonProps {
   loading?: boolean;
   fullWidth?: boolean;
   iconLeft?: React.ReactNode;
+  href?: Href;
+  replace?: boolean;
 }
 
 export const ChessButton = ({
-  variant = 'primary',
-  size = 'md',
-  children,
-  onPress,
-  disabled = false,
-  loading = false,
-  fullWidth = false,
-  iconLeft,
-}: ChessButtonProps) => {
+                              variant = 'primary',
+                              size = 'md',
+                              children,
+                              onPress,
+                              disabled = false,
+                              loading = false,
+                              fullWidth = false,
+                              iconLeft,
+                              href,
+                              replace,
+                            }: ChessButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [feedbackSignal, setFeedbackSignal] = useState(0);
+
+  const router = useRouter();
+  const pressInTimeRef = useRef<number>(0);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const tokens = getTokens();
   const darkColor = tokens.color.dark.val;
@@ -40,6 +55,7 @@ export const ChessButton = ({
 
   const isInteractionDisabled = disabled;
   const isActionDisabled = disabled || loading;
+  const isGhost = variant === 'ghost';
   const buttonSize = CHESS_BUTTON_SIZES[size];
   const variantConfig = CHESS_BUTTON_VARIANTS[variant];
   const depth = variantConfig.depth;
@@ -57,7 +73,7 @@ export const ChessButton = ({
       borderColor,
       borderTopSideColor,
       edgeColor,
-      shadowColor: darkColor,
+      shadowColor: isGhost ? 'transparent' : darkColor,
       hoverColor,
       focusRingColor: accentColor,
     };
@@ -72,15 +88,38 @@ export const ChessButton = ({
     accentColor,
   ]);
 
+  const handlePress = () => {
+    if (isActionDisabled) return;
+
+    if (href) {
+      const timeElapsed = Date.now() - pressInTimeRef.current + 100;
+      const remainingTime = Math.max(0, BUTTON_FEEDBACK.checkerTotalDurationMs - timeElapsed);
+
+      const performNavigation = () => {
+        if (replace) router.replace(href);
+        else router.push(href);
+
+        onPress?.(); // On appelle aussi onPress au cas où tu en aurais besoin pour de l'analytique
+      };
+
+      if (remainingTime > 0) {
+        timeoutRef.current = setTimeout(performNavigation, remainingTime);
+      } else {
+        performNavigation();
+      }
+    } else {
+      // MODE ACTION NORMALE : On exécute instantanément
+      onPress?.();
+    }
+  };
+
   return (
     <Button
       unstyled
-      onPress={() => {
-        if (isActionDisabled) return;
-        onPress?.();
-      }}
+      onPress={handlePress}
       disabled={isInteractionDisabled}
       onPressIn={() => {
+        pressInTimeRef.current = Date.now();
         setIsPressed(true);
         setFeedbackSignal((value) => value + 1);
       }}
@@ -102,31 +141,46 @@ export const ChessButton = ({
       position="relative"
       overflow="hidden"
       backgroundColor={colors.backgroundColor}
-      borderWidth={CHESS_BUTTON_INTERACTION.borderWidth}
+      borderWidth={isGhost ? 0 : CHESS_BUTTON_INTERACTION.borderWidth}
       borderColor={colors.borderColor}
       borderTopColor={colors.borderTopSideColor}
       borderLeftColor={colors.borderTopSideColor}
       borderRightColor={colors.borderTopSideColor}
       borderBottomWidth={
-        isPressed ? CHESS_BUTTON_INTERACTION.pressedBorderBottomWidth : depth.bottomWidth
+        isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedBorderBottomWidth
+            : depth.bottomWidth
       }
       borderBottomColor={colors.edgeColor}
       opacity={isActionDisabled ? CHESS_BUTTON_INTERACTION.disabledOpacity : 1}
-      shadowColor={colors.shadowColor}
       shadowOffset={{
         width: 0,
-        height: isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowOffsetY : depth.shadowOffsetY,
+        height: isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedShadowOffsetY
+            : depth.shadowOffsetY,
       }}
       shadowOpacity={
-        isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowOpacity : depth.shadowOpacity
+        isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedShadowOpacity
+            : depth.shadowOpacity
       }
-      shadowRadius={isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowRadius : depth.shadowRadius}
+      shadowRadius={
+        isGhost ? 0 : isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowRadius : depth.shadowRadius
+      }
       elevation={
-        isPressed
-          ? CHESS_BUTTON_INTERACTION.pressedElevation
-          : CHESS_BUTTON_INTERACTION.defaultElevation
+        isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedElevation
+            : CHESS_BUTTON_INTERACTION.defaultElevation
       }
-      transform={isPressed ? [{ translateY: depth.pressTranslateY }] : undefined}
+      transform={isPressed && !isGhost ? [{ translateY: depth.pressTranslateY }] : undefined}
       hoverStyle={{
         backgroundColor: colors.hoverColor,
       }}

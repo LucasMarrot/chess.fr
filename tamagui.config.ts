@@ -36,6 +36,8 @@ const tokens = createTokens({
     light: '#FFFAFB',
     primary: '#FAE0E4',
     primaryDark: '#D893A2',
+    danger: '#C62828',
+    dangerDark: '#7F1D1D',
     interactionGrey: '#7A7677',
     buttonPrimaryHover: '#272223',
     buttonSecondaryHover: '#F2F0F1',
@@ -107,7 +109,8 @@ const config = createTamagui({
 
 type Conf = typeof config;
 declare module 'tamagui' {
-  interface TamaguiCustomConfig extends Conf {}
+  interface TamaguiCustomConfig extends Conf {
+  }
 }
 
 export default config;

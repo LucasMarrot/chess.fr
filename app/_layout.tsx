@@ -9,6 +9,9 @@ import tamaguiConfig from '@/tamagui.config';
 import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
+import { ToastProvider, ToastViewport } from '@tamagui/toast';
+import { CurrentToast } from '@/components/ui/CurrentToast';
+
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
@@ -22,13 +25,11 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    // Vérification initiale de la session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setInitialized(true);
     });
 
-    // Écoute des changements (Login / Logout)
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
@@ -44,21 +45,26 @@ export default function RootLayout() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!session && !inAuthGroup) {
-      // Pas de session -> redirection vers login
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
-      // Session présente -> redirection vers l'app
       router.replace('/(tabs)');
     }
   }, [session, initialized, segments]);
 
   return (
     <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-      <Stack>
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      {/* On ajoute le ToastProvider ici pour qu'il soit global */}
+      <ToastProvider swipeDirection="up" duration={4000}>
+        <Stack>
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+
+        {/* Rendu visuel et positionnement des Toasts */}
+        <CurrentToast />
+        <ToastViewport top="$8" left={0} right={0} paddingHorizontal="$4" />
+      </ToastProvider>
       <StatusBar style="auto" />
     </TamaguiProvider>
   );
