@@ -29,6 +29,8 @@ type LastDrop = {
   activeId: UniqueIdentifier;
   targetSquare: UniqueIdentifier;
   activeLayout: LayoutRectangle;
+  centerOffsetX: number;
+  centerOffsetY: number;
 } | null;
 
 type ChessboardDnDContextType = {
@@ -139,6 +141,8 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
           activeId: e.active.id as UniqueIdentifier,
           targetSquare: e.over.id as UniqueIdentifier,
           activeLayout,
+          centerOffsetX: dragCenterOffset.value.x,
+          centerOffsetY: dragCenterOffset.value.y,
         });
       } else {
         setLastDrop(null);

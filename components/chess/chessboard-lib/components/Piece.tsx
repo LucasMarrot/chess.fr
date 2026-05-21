@@ -196,8 +196,8 @@ export function Piece({ isPremovedPiece = false, piece, square, squares }: Piece
     const [, dropPiece] = activeId.split('-');
     if (dropPiece !== piece) return;
     const { x, y } = getSquareTopLeft(square);
-    const releaseX = lastDrop.activeLayout.x - x;
-    const releaseY = lastDrop.activeLayout.y - y;
+    const releaseX = lastDrop.activeLayout.x + lastDrop.centerOffsetX - x;
+    const releaseY = lastDrop.activeLayout.y + lastDrop.centerOffsetY - y;
 
     isDropAnimatingRef.current = true;
     skipResetRef.current = true;
