@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useRef } from 'react';
 import type { Dispatch, FC, ReactNode, SetStateAction } from 'react';
 import { DndProvider, ItemOptions, UniqueIdentifier } from '@mgcrea/react-native-dnd';
 import type { LayoutRectangle } from 'react-native';
@@ -8,6 +8,8 @@ import type {
   GestureUpdateEvent,
   PanGestureHandlerEventPayload,
 } from 'react-native-gesture-handler';
+import type { SharedValue } from 'react-native-reanimated';
+import { useSharedValue } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import type { ChessboardDnDProviderProps } from '../types';
 
@@ -23,6 +25,12 @@ type DropState = {
   droppedTargetSquare: UniqueIdentifier | null;
 };
 
+type LastDrop = {
+  activeId: UniqueIdentifier;
+  targetSquare: UniqueIdentifier;
+  activeLayout: LayoutRectangle;
+} | null;
+
 type ChessboardDnDContextType = {
   isCustomDndProviderSet: boolean;
   dragState: DragState;
@@ -30,6 +38,9 @@ type ChessboardDnDContextType = {
   dropState: DropState;
   setDropState: Dispatch<SetStateAction<DropState>>;
   clearDropState: () => void;
+  dragCenterOffset: SharedValue<{ x: number; y: number }>;
+  lastDrop: LastDrop;
+  clearLastDrop: () => void;
 };
 
 export const ChessboardDnDContext = createContext<ChessboardDnDContextType>({
@@ -47,6 +58,9 @@ export const ChessboardDnDContext = createContext<ChessboardDnDContextType>({
   setDragState: () => {},
   setDropState: () => {},
   clearDropState: () => {},
+  dragCenterOffset: { value: { x: 0, y: 0 } } as SharedValue<{ x: number; y: number }>,
+  lastDrop: null,
+  clearLastDrop: () => {},
 });
 
 const EmptyProvider: FC<{ children: ReactNode }> = ({ children }) => {
@@ -71,6 +85,13 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
     droppedId: null,
     droppedTargetSquare: null,
   });
+  const [lastDrop, setLastDrop] = useState<LastDrop>(null);
+  const dragCenterOffset = useSharedValue({ x: 0, y: 0 });
+  const lastActiveLayoutRef = useRef<LayoutRectangle | null>(null);
+
+  const clearLastDrop = () => {
+    setLastDrop(null);
+  };
 
   const handleBegin = (
     e: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
@@ -80,7 +101,7 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
     },
   ) => {
     setDragState({
-      isDragging: true,
+      isDragging: false,
       activeId: info.activeId,
       activeLayout: info.activeLayout,
       droppableActiveId: null,
@@ -95,14 +116,37 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
       droppableActiveId: UniqueIdentifier | null;
     },
   ) => {
+    lastActiveLayoutRef.current = meta.activeLayout;
     // Update drag state with the active droppable
-    setDragState((prev) => ({
-      ...prev,
-      droppableActiveId: meta.droppableActiveId,
-    }));
+    setDragState((prev) => {
+      if (prev.droppableActiveId === meta.droppableActiveId && prev.isDragging) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        isDragging: true,
+        droppableActiveId: meta.droppableActiveId,
+      };
+    });
   };
 
   const handleDragEnd = (e: { active: ItemOptions; over: ItemOptions | null }) => {
+    if (e.over) {
+      const activeLayout = lastActiveLayoutRef.current;
+      if (activeLayout) {
+        setLastDrop({
+          activeId: e.active.id as UniqueIdentifier,
+          targetSquare: e.over.id as UniqueIdentifier,
+          activeLayout,
+        });
+      } else {
+        setLastDrop(null);
+      }
+    } else {
+      clearLastDrop();
+      dragCenterOffset.value = { x: 0, y: 0 };
+    }
     setDropState({
       droppedId: e.active.id as UniqueIdentifier | null,
       droppedTargetSquare: (e.over?.id ?? null) as UniqueIdentifier | null,
@@ -129,40 +173,50 @@ export const ChessboardDnDProvider: FC<ChessboardDnDProviderProps & ChessboardDn
         setDragState,
         setDropState,
         clearDropState,
+        dragCenterOffset,
+        lastDrop,
+        clearLastDrop,
       }}
     >
       <DndProvider
         minDistance={5}
+        springConfig={{
+          damping: 60,
+          stiffness: 800,
+          mass: 1,
+          overshootClamping: true,
+        }}
         shouldDropWorklet={(
           activeRect: { x: number; y: number; width: number; height: number },
           droppableRect: { x: number; y: number; width: number; height: number },
         ) => {
           'worklet';
-          // Very permissive drop zone - allow drop if any part of the piece overlaps with the square
-          // This ensures drops work for both white and black pieces
-          const pieceRight = activeRect.x + activeRect.width;
-          const pieceBottom = activeRect.y + activeRect.height;
-          const squareRight = droppableRect.x + droppableRect.width;
-          const squareBottom = droppableRect.y + droppableRect.height;
+          const { x: offsetX, y: offsetY } = dragCenterOffset.value;
+          const pointerX = activeRect.x + activeRect.width / 2 + offsetX;
+          const pointerY = activeRect.y + activeRect.height / 2 + offsetY;
 
-          // Check for overlap - piece overlaps square if:
-          // - piece left edge is before square right edge AND
-          // - piece right edge is after square left edge AND
-          // - piece top edge is before square bottom edge AND
-          // - piece bottom edge is after square top edge
-          const overlaps =
-            activeRect.x < squareRight &&
-            pieceRight > droppableRect.x &&
-            activeRect.y < squareBottom &&
-            pieceBottom > droppableRect.y;
-
-          return overlaps;
+          return (
+            pointerX >= droppableRect.x &&
+            pointerX <= droppableRect.x + droppableRect.width &&
+            pointerY >= droppableRect.y &&
+            pointerY <= droppableRect.y + droppableRect.height
+          );
         }}
         onBegin={(
           e: GestureStateChangeEvent<PanGestureHandlerEventPayload>,
           info: { activeId: UniqueIdentifier; activeLayout: LayoutRectangle },
         ) => {
           'worklet';
+          const { x, y } = e;
+          const { activeLayout } = info;
+          if (activeLayout) {
+            dragCenterOffset.value = {
+              x: x - (activeLayout.x + activeLayout.width / 2),
+              y: y - (activeLayout.y + activeLayout.height / 2),
+            };
+          } else {
+            dragCenterOffset.value = { x: 0, y: 0 };
+          }
           scheduleOnRN(handleBegin, e, info);
         }}
         onUpdate={(

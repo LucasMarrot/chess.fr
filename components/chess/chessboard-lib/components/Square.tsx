@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, { useContext, useEffect, useMemo, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable, View } from 'react-native';
 import { useChessboard } from '../context/chessboard-context';
@@ -22,7 +22,6 @@ export function Square({
 }: SquareProps) {
   const squareRef = useRef<View>(null);
   const {
-    autoPromoteToQueen,
     boardWidth,
     boardOrientation,
     clearArrows,
@@ -33,33 +32,44 @@ export function Square({
     customLightSquareStyle,
     customPremoveDarkSquareStyle,
     customPremoveLightSquareStyle,
-    customSquare: CustomSquare,
     customSquareStyles,
     checkHighlightColor,
     handleSetPosition,
-    handleSparePieceDrop,
+    isWaitingForAnimation,
     onPromotionCheck,
     onSquareClick,
-    onPieceDrop,
-    setPromoteFromSquare,
-    setPromoteToSquare,
-    setShowPromoteDialog,
+    positionDifferences,
     squareOverlayTintColor,
     whiteKingInCheck,
     blackKingInCheck,
   } = useChessboard();
 
   const { dragState, dropState, clearDropState } = useContext(ChessboardDnDContext);
-  // Check if this square is the active droppable (handle both string and object comparisons)
   const isOver =
     dragState.droppableActiveId === square ||
     dragState.droppableActiveId?.toString() === square ||
     (typeof dragState.droppableActiveId === 'string' && dragState.droppableActiveId === square);
-  // When this square's piece is being dragged, lift the whole square so the piece stays above the board
   const piece = currentPosition[square];
+  const pieceKey = String(piece ?? '');
   const isDraggingFromHere = Boolean(
     dragState.isDragging && piece && dragState.activeId?.toString() === `${square}-${piece}`,
   );
+  const isAnimatingFromHere = useMemo(() => {
+    if (!isWaitingForAnimation) return false;
+    const removedPiece = positionDifferences.removed?.[square];
+    if (!removedPiece) return false;
+
+    return Object.entries(positionDifferences.added).some(([targetSquare, targetPiece]) => {
+      if (targetPiece === removedPiece) return true;
+      return onPromotionCheck(square, targetSquare as Sq, removedPiece);
+    });
+  }, [
+    isWaitingForAnimation,
+    onPromotionCheck,
+    positionDifferences.added,
+    positionDifferences.removed,
+    square,
+  ]);
 
   const defaultSquareStyle = {
     ...borderRadius(square, boardOrientation, customBoardStyle),
@@ -80,17 +90,13 @@ export function Square({
       const droppedPiece = dropState.droppedId?.toString().split('-')[1];
       const dropKey = `${dropState.droppedId}-${dropState.droppedTargetSquare}`;
 
-      // Only process if this is a new drop (not already processed)
       if (sourceSquare && droppedPiece && lastProcessedDrop.current !== dropKey) {
         lastProcessedDrop.current = dropKey;
 
-        // Clear drop state immediately to prevent re-processing
         clearDropState();
 
-        // Process the drop
         handleSetPosition(sourceSquare as Sq, square, droppedPiece as Piece, true);
 
-        // Reset the processed drop ref after a delay
         setTimeout(() => {
           if (lastProcessedDrop.current === dropKey) {
             lastProcessedDrop.current = null;
@@ -98,8 +104,6 @@ export function Square({
         }, 100);
       }
     }
-    // Only depend on the actual drop state values, not the function
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dropState.droppedId, dropState.droppedTargetSquare, square, clearDropState]);
 
   return (
@@ -123,12 +127,13 @@ export function Square({
       style={[
         defaultSquareStyle as import('react-native').ViewStyle,
         {
+          position: 'relative',
           width: boardWidth / 8,
           height: boardWidth / 8,
           justifyContent: 'center',
           alignItems: 'center',
-          zIndex: isDraggingFromHere ? 1000 : isOver ? 2 : 1,
-          elevation: isDraggingFromHere ? 1000 : isOver ? 2 : 1,
+          zIndex: isDraggingFromHere ? 1000 : isAnimatingFromHere ? 900 : isOver ? 2 : 1,
+          elevation: isDraggingFromHere ? 1000 : isAnimatingFromHere ? 900 : isOver ? 2 : 1,
         },
       ]}
       onPress={() => {
@@ -143,13 +148,12 @@ export function Square({
           justifyContent: 'center',
           alignItems: 'center',
           ...(squareStyle && !isGradient && squareStyle),
-          // Only highlight king in check, not during premoves
           ...(!squareHasPremove &&
             whiteKingInCheck &&
-            piece === 'wK' && { backgroundColor: checkHighlightColor }),
+            pieceKey === 'wK' && { backgroundColor: checkHighlightColor }),
           ...(!squareHasPremove &&
             blackKingInCheck &&
-            piece === 'bK' && { backgroundColor: checkHighlightColor }),
+            pieceKey === 'bK' && { backgroundColor: checkHighlightColor }),
         }}
       >
         {isGradient ? (
@@ -172,7 +176,6 @@ export function Square({
   );
 }
 
-// Helper functions
 const borderRadius = (
   square: Sq,
   boardOrientation: BoardOrientation,

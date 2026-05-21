@@ -1,47 +1,53 @@
-import React, { forwardRef, useMemo } from 'react';
-import { Dimensions, TouchableOpacity, View } from 'react-native';
+import React, { forwardRef, useCallback, useMemo } from 'react';
+import { useWindowDimensions, View } from 'react-native';
 import { getTokens } from 'tamagui';
-import { Chessboard as LibChessboard } from './chessboard-lib';
-import type { ClearPremoves } from './chessboard-lib';
-import type { CustomSquareStyles, Piece, Square } from './chessboard-lib/types';
 
-export type { ClearPremoves };
+import {
+  Chessboard as NativeChessboard,
+  type ClearPremoves as NativeClearPremoves,
+} from './chessboard-lib';
+import type {
+  BoardPosition,
+  ChessboardProps as NativeChessboardProps,
+  CustomSquareStyles,
+  Piece,
+  Square,
+} from './chessboard-lib/types';
 
-export type ChessBoardProps = {
-  position?: string;
-  onPieceDrop: (sourceSquare: Square, targetSquare: Square, piece: Piece) => boolean;
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+const EMPTY_SQUARE_STYLES: CustomSquareStyles = {};
+
+export type ClearPremoves = NativeClearPremoves;
+
+export type ChessBoardProps = Omit<
+  NativeChessboardProps,
+  'boardWidth' | 'position' | 'customDarkSquareStyle' | 'customLightSquareStyle' | 'onPieceDrop'
+> & {
+  position?: string | BoardPosition;
   size?: { width: number; height: number };
-  animationDuration?: number;
+  boardWidth?: number;
   onPress?: () => void;
-  onPromotionCheck?: (sourceSquare: Square, targetSquare: Square, piece: Piece) => boolean;
-  onSquareClick?: (square: Square, piece?: Piece) => boolean | void;
-  isDraggablePiece?: ({ piece, sourceSquare }: { piece: Piece; sourceSquare: Square }) => boolean;
+  onPieceDrop: (sourceSquare: Square, targetSquare: Square, piece: Piece) => boolean;
   customDarkSquareStyle?: Record<string, string | number>;
   customLightSquareStyle?: Record<string, string | number>;
   customSquareStyles?: CustomSquareStyles;
-  customBoardStyle?: Record<string, string | number>;
-  boardOrientation?: 'black' | 'white';
-  arePremovesAllowed?: boolean;
-  showPromotionDialog?: boolean;
-  autoPromoteToQueen?: boolean;
-  whiteKingInCheck?: boolean;
-  blackKingInCheck?: boolean;
 };
 
 const Chessboard = forwardRef<ClearPremoves, ChessBoardProps>(
   (
     {
-      position = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR',
+      position = START_FEN,
       onPieceDrop,
       size,
+      boardWidth: boardWidthProp,
       animationDuration = 200,
       onPress,
       onPromotionCheck = () => false,
-      onSquareClick = () => true,
+      onSquareClick,
       isDraggablePiece = () => true,
       customDarkSquareStyle,
       customLightSquareStyle,
-      customSquareStyles = {},
+      customSquareStyles = EMPTY_SQUARE_STYLES,
       customBoardStyle,
       boardOrientation = 'white',
       arePremovesAllowed = false,
@@ -49,11 +55,21 @@ const Chessboard = forwardRef<ClearPremoves, ChessBoardProps>(
       autoPromoteToQueen = false,
       whiteKingInCheck = false,
       blackKingInCheck = false,
+      ...rest
     },
     ref,
   ) => {
     const tokens = getTokens();
-    const boardWidth = size?.width ?? Dimensions.get('window').width;
+    const window = useWindowDimensions();
+
+    const resolvedBoardWidth = useMemo(() => {
+      if (boardWidthProp && boardWidthProp > 0) return boardWidthProp;
+      if (size?.width && size?.height) return Math.min(size.width, size.height);
+      if (size?.width) return size.width;
+      if (size?.height) return size.height;
+      return window.width;
+    }, [boardWidthProp, size?.height, size?.width, window.width]);
+
     const fallbackDarkSquareStyle = useMemo(
       () => ({ backgroundColor: String(tokens.color.boardWoodDark.val) }),
       [tokens],
@@ -65,58 +81,47 @@ const Chessboard = forwardRef<ClearPremoves, ChessBoardProps>(
 
     const resolvedDarkSquareStyle = customDarkSquareStyle ?? fallbackDarkSquareStyle;
     const resolvedLightSquareStyle = customLightSquareStyle ?? fallbackLightSquareStyle;
+    const resolvedPosition = position === START_FEN ? 'start' : (position ?? 'start');
 
-    const boardElement = (
-      <LibChessboard
-        ref={ref}
-        position={position === 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR' ? 'start' : position}
-        boardWidth={boardWidth}
-        animationDuration={animationDuration}
-        boardOrientation={boardOrientation}
-        customDarkSquareStyle={resolvedDarkSquareStyle as Record<string, string>}
-        customLightSquareStyle={resolvedLightSquareStyle as Record<string, string>}
-        customSquareStyles={customSquareStyles}
-        customBoardStyle={customBoardStyle}
-        arePremovesAllowed={arePremovesAllowed}
-        showPromotionDialog={showPromotionDialog}
-        autoPromoteToQueen={autoPromoteToQueen}
-        whiteKingInCheck={whiteKingInCheck}
-        blackKingInCheck={blackKingInCheck}
-        onPieceDrop={(sourceSquare, targetSquare, piece) =>
-          onPieceDrop(sourceSquare as Square, targetSquare as Square, piece)
-        }
-        onPromotionCheck={(sourceSquare, targetSquare, piece) =>
-          onPromotionCheck(sourceSquare as Square, targetSquare as Square, piece)
-        }
-        onSquareClick={(square, piece) =>
-          onSquareClick(square as Square, piece as Piece | undefined)
-        }
-        isDraggablePiece={({ piece, sourceSquare }) =>
-          isDraggablePiece({ piece, sourceSquare: sourceSquare as Square })
-        }
-        onPromotionPieceSelect={(piece, promoteFromSquare, promoteToSquare) => {
-          if (promoteFromSquare && promoteToSquare && piece) {
-            const ok = onPieceDrop(promoteFromSquare as Square, promoteToSquare as Square, piece);
-            return ok;
-          }
-          return true;
-        }}
-      />
+    const boardStyle = useMemo(() => {
+      if (!resolvedBoardWidth || resolvedBoardWidth <= 0) return undefined;
+      return { width: resolvedBoardWidth, height: resolvedBoardWidth };
+    }, [resolvedBoardWidth]);
+
+    const handleSquareClick = useCallback(
+      (square: Square, piece?: Piece) => {
+        const result = onSquareClick?.(square, piece);
+        if (onPress) onPress();
+        return result;
+      },
+      [onPress, onSquareClick],
     );
 
-    const content = (
-      <View style={boardWidth > 0 ? { width: boardWidth } : undefined}>{boardElement}</View>
+    return (
+      <View style={boardStyle}>
+        <NativeChessboard
+          ref={ref}
+          boardWidth={resolvedBoardWidth}
+          position={resolvedPosition}
+          animationDuration={animationDuration}
+          boardOrientation={boardOrientation}
+          customDarkSquareStyle={resolvedDarkSquareStyle as Record<string, string>}
+          customLightSquareStyle={resolvedLightSquareStyle as Record<string, string>}
+          customSquareStyles={customSquareStyles}
+          customBoardStyle={customBoardStyle}
+          arePremovesAllowed={arePremovesAllowed}
+          showPromotionDialog={showPromotionDialog}
+          autoPromoteToQueen={autoPromoteToQueen}
+          whiteKingInCheck={whiteKingInCheck}
+          blackKingInCheck={blackKingInCheck}
+          onPieceDrop={onPieceDrop}
+          onPromotionCheck={onPromotionCheck}
+          onSquareClick={handleSquareClick}
+          isDraggablePiece={isDraggablePiece}
+          {...rest}
+        />
+      </View>
     );
-
-    if (onPress) {
-      return (
-        <TouchableOpacity onPress={onPress} activeOpacity={0.2}>
-          {content}
-        </TouchableOpacity>
-      );
-    }
-
-    return content;
   },
 );
 

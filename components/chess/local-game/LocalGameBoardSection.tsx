@@ -3,11 +3,10 @@ import type { StyleProp, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { View, YStack } from 'tamagui';
 
-import Chessboard, { type ClearPremoves } from '../ChessBoard';
-import type { CustomSquareStyles, Piece, Square } from '../chessboard-lib/types';
-
 import { localGameStyles } from './styles';
 import type { LocalGameTheme } from './types';
+import Chessboard, { type ClearPremoves } from '../ChessBoard';
+import type { CustomSquareStyles, Piece, Square } from '../chessboard-lib/types';
 
 type LocalGameBoardSectionProps = {
   chessboardRef: RefObject<ClearPremoves | null>;
@@ -65,15 +64,6 @@ export const LocalGameBoardSection = ({
           onPieceDrop={onPieceDrop}
           onSquareClick={onSquareClick}
           isDraggablePiece={isDraggablePiece}
-          onPromotionCheck={(sourceSquare, targetSquare, piece) => {
-            const isPawnPromo =
-              (piece === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8') ||
-              (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1');
-
-            return (
-              isPawnPromo && Math.abs(sourceSquare.charCodeAt(0) - targetSquare.charCodeAt(0)) <= 1
-            );
-          }}
         />
 
         {captureSquareBox ? (

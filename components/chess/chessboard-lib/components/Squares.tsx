@@ -8,7 +8,6 @@ import { Notation } from './Notation';
 import { Piece } from './Piece';
 import { Square } from './Square';
 
-// this type shows the exact route of each premoved piece
 type PremovesHistory = {
   piece: Pc;
   premovesRoute: { sourceSq: Sq; targetSq: Sq; index: number }[];
@@ -23,35 +22,59 @@ export function Squares() {
     boardWidth,
     currentPosition,
     id,
+    isWaitingForAnimation,
+    onPromotionCheck,
+    positionDifferences,
     premoves,
     showBoardNotation,
     isDraggablePiece,
     arePiecesDraggable,
   } = useChessboard();
 
+  const movingSourceRanks = useMemo(() => {
+    if (!isWaitingForAnimation) return new Set<number>();
+
+    const ranks = new Set<number>();
+    const addedEntries = Object.entries(positionDifferences.added) as [Sq, Pc][];
+
+    (Object.entries(positionDifferences.removed) as [Sq, Pc][]).forEach(
+      ([sourceSquare, removedPiece]) => {
+        const isMovingPiece = addedEntries.some(([targetSquare, targetPiece]) => {
+          if (targetPiece === removedPiece) return true;
+          return onPromotionCheck(sourceSquare, targetSquare, removedPiece);
+        });
+
+        if (!isMovingPiece) return;
+        const rank = Number(sourceSquare[1]);
+        if (!Number.isNaN(rank)) ranks.add(rank);
+      },
+    );
+
+    return ranks;
+  }, [
+    isWaitingForAnimation,
+    onPromotionCheck,
+    positionDifferences.added,
+    positionDifferences.removed,
+  ]);
+
   const premovesHistory: PremovesHistory = useMemo(() => {
     const result: PremovesHistory = [];
-    // if premoves aren't allowed, don't waste time on calculations
     if (!arePremovesAllowed) return [];
 
     premoves.forEach((premove: { sourceSq: Sq; targetSq: Sq; piece: Pc }, index: number) => {
       const { sourceSq, targetSq, piece } = premove;
 
-      // determine if the premove is made by an already premoved piece
       const relatedPremovedPiece = result.find(
         (p: PremovesHistory[number]) =>
           p.piece === piece && p.premovesRoute.at(-1)?.targetSq === sourceSq,
       );
 
-      // if premove has been made by already premoved piece then write the move to its `premovesRoute` field to be able find its final destination later
       if (relatedPremovedPiece) {
         relatedPremovedPiece.premovesRoute.push({ sourceSq, targetSq, index });
-      }
-      // if premove has been made by standard piece create new object in `premovesHistory` where we will keep its own premoves
-      else {
+      } else {
         result.push({
           piece,
-          // index is useful for scenarios where two or more pieces are targeting the same square
           premovesRoute: [{ sourceSq, targetSq, index }],
         });
       }
@@ -63,13 +86,19 @@ export function Squares() {
   return (
     <View testID={`boardid-${id}`}>
       {[...Array(8)].map((_, r) => {
+        const rowRank = boardOrientation === 'black' ? r + 1 : 8 - r;
+        const rowIsAnimating = movingSourceRanks.has(rowRank);
+
         return (
           <View
             key={r.toString()}
             style={{
+              position: 'relative',
               flexDirection: 'row',
               flexWrap: 'nowrap',
               width: boardWidth,
+              zIndex: rowIsAnimating ? 950 : 1,
+              elevation: rowIsAnimating ? 950 : 0,
             }}
           >
             {[...Array(8)].map((_, c) => {
@@ -85,7 +114,6 @@ export function Squares() {
 
               const squareHasPremoveTarget = premovesHistory
                 .filter(({ premovesRoute }) => premovesRoute.at(-1)?.targetSq === square)
-                //the premoved piece with the higher index will be shown, as it is the latest one
                 .sort((a, b) => b.premovesRoute.at(-1)?.index! - a.premovesRoute.at(-1)?.index!)
                 .at(0);
 

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable } from 'react-native';
 import { G, Svg } from 'react-native-svg';
@@ -24,47 +24,83 @@ type PieceProps = {
 export function Piece({ isPremovedPiece = false, piece, square, squares }: PieceProps) {
   const {
     animationDuration,
-    arePiecesDraggable,
     boardWidth,
     boardOrientation,
     chessPieces,
     currentPosition,
-    deletePieceFromSquare,
-    dropOffBoardAction,
-    id,
-    isDraggablePiece,
     isWaitingForAnimation,
     onPieceClick,
     onSquareClick,
     onPieceDragBegin,
     onPieceDragEnd,
-    onPieceDropOffBoard,
     onPromotionCheck,
     positionDifferences,
   } = useChessboard();
 
-  const { dragState } = useContext(ChessboardDnDContext);
+  const { dragState, lastDrop, clearLastDrop } = useContext(ChessboardDnDContext);
+  const skipResetRef = useRef(false);
+  const isDropAnimatingRef = useRef(false);
+  const dropAnimationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const dragSquare = dragState.activeId?.toString()?.split('-')[0];
   const dragPiece = dragState.activeId?.toString()?.split('-')[1];
   const isDragging = dragState.isDragging && dragPiece === piece && dragSquare === square;
 
-  // Use Reanimated shared values for smooth animations
   const zIndex = useSharedValue(5);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const opacity = useSharedValue(1);
+  const dragOpacity = useSharedValue(1);
 
-  // Handle drag lifecycle via state changes
   useEffect(() => {
     if (isDragging) {
       onPieceDragBegin(piece, square);
-      zIndex.value = 10; // Highest z-index when dragging
+      zIndex.value = 10;
+      dragOpacity.value = withTiming(0, { duration: 80 });
     } else {
       onPieceDragEnd(piece, square);
       zIndex.value = 5;
+      if (!isDropAnimatingRef.current) {
+        dragOpacity.value = withTiming(1, { duration: 80 });
+      }
     }
   }, [isDragging, piece, square, onPieceDragBegin, onPieceDragEnd]);
+
+  useEffect(() => {
+    return () => {
+      if (dropAnimationTimeoutRef.current) {
+        clearTimeout(dropAnimationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const getSquareDelta = (sourceSq: Square, targetSq: Square) => {
+    const squareWidth = boardWidth / 8;
+    const xDelta =
+      (boardOrientation === 'black' ? -1 : 1) *
+      (targetSq.charCodeAt(0) - sourceSq.charCodeAt(0)) *
+      squareWidth;
+    const yDelta =
+      (boardOrientation === 'black' ? -1 : 1) *
+      (Number(sourceSq[1]) - Number(targetSq[1])) *
+      squareWidth;
+
+    return { xDelta, yDelta };
+  };
+
+  const getSquareTopLeft = (targetSq: Square) => {
+    const squareWidth = boardWidth / 8;
+    const file = targetSq.charCodeAt(0) - 97;
+    const rank = Number(targetSq[1]) - 1;
+
+    const col = boardOrientation === 'black' ? 7 - file : file;
+    const row = boardOrientation === 'black' ? rank : 7 - rank;
+
+    return {
+      x: col * squareWidth,
+      y: row * squareWidth,
+    };
+  };
 
   // Animate piece movement
   useEffect(() => {
@@ -76,23 +112,20 @@ export function Piece({ isPremovedPiece = false, piece, square, squares }: Piece
     );
 
     if (isWaitingForAnimation && newSquare && !isPremovedPiece) {
-      const squareWidth = boardWidth / 8;
       const sourceSq = square;
       const targetSq = newSquare[0];
+      const { xDelta, yDelta } = getSquareDelta(sourceSq, targetSq);
+      const isMovingDown = yDelta > 0;
 
-      translateX.value = withSpring(
-        (boardOrientation === 'black' ? -1 : 1) *
-          (targetSq.charCodeAt(0) - sourceSq.charCodeAt(0)) *
-          squareWidth,
-        { damping: 15, stiffness: 150 },
-      );
-      translateY.value = withSpring(
-        (boardOrientation === 'black' ? -1 : 1) *
-          (Number(sourceSq[1]) - Number(targetSq[1])) *
-          squareWidth,
-        { damping: 15, stiffness: 150 },
-      );
-      zIndex.value = 6;
+      translateX.value = withTiming(xDelta, {
+        duration: animationDuration,
+        easing: Easing.out(Easing.cubic),
+      });
+      translateY.value = withTiming(yDelta, {
+        duration: animationDuration,
+        easing: Easing.out(Easing.cubic),
+      });
+      zIndex.value = isMovingDown ? 30 : 6;
       opacity.value = withTiming(1, { duration: 100 });
     }
   }, [
@@ -137,23 +170,74 @@ export function Piece({ isPremovedPiece = false, piece, square, squares }: Piece
 
   // Reset transform
   useEffect(() => {
+    if (skipResetRef.current) {
+      skipResetRef.current = false;
+      return;
+    }
     if (squares[square]) {
-      translateX.value = withSpring(0, { damping: 15, stiffness: 150 });
-      translateY.value = withSpring(0, { damping: 15, stiffness: 150 });
+      translateX.value = withTiming(0, {
+        duration: Math.max(90, animationDuration * 0.6),
+        easing: Easing.out(Easing.cubic),
+      });
+      translateY.value = withTiming(0, {
+        duration: Math.max(90, animationDuration * 0.6),
+        easing: Easing.out(Easing.cubic),
+      });
       opacity.value = withTiming(1, { duration: 100 });
     }
-  }, [currentPosition, squares, square]);
+  }, [animationDuration, currentPosition, squares, square]);
+
+  useEffect(() => {
+    if (!lastDrop) return;
+    const activeId = lastDrop.activeId?.toString();
+    const targetSquare = lastDrop.targetSquare?.toString();
+    if (!activeId || targetSquare !== square) return;
+
+    const [, dropPiece] = activeId.split('-');
+    if (dropPiece !== piece) return;
+    const { x, y } = getSquareTopLeft(square);
+    const releaseX = lastDrop.activeLayout.x - x;
+    const releaseY = lastDrop.activeLayout.y - y;
+
+    isDropAnimatingRef.current = true;
+    skipResetRef.current = true;
+    translateX.value = releaseX;
+    translateY.value = releaseY;
+    opacity.value = withTiming(1, { duration: 80 });
+    dragOpacity.value = withTiming(1, { duration: 60 });
+    zIndex.value = 8;
+    translateX.value = withTiming(0, {
+      duration: Math.max(110, animationDuration * 0.5),
+      easing: Easing.out(Easing.cubic),
+    });
+    translateY.value = withTiming(0, {
+      duration: Math.max(110, animationDuration * 0.5),
+      easing: Easing.out(Easing.cubic),
+    });
+
+    clearLastDrop();
+
+    if (dropAnimationTimeoutRef.current) {
+      clearTimeout(dropAnimationTimeoutRef.current);
+    }
+    dropAnimationTimeoutRef.current = setTimeout(
+      () => {
+        isDropAnimatingRef.current = false;
+      },
+      Math.max(140, animationDuration * 0.5),
+    );
+  }, [animationDuration, clearLastDrop, lastDrop, piece, square]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
       zIndex: zIndex.value,
       transform: [{ translateX: translateX.value }, { translateY: translateY.value }],
-      opacity: opacity.value,
+      opacity: opacity.value * dragOpacity.value,
     };
   });
 
   return (
-    <Animated.View style={animatedStyle}>
+    <Animated.View style={[animatedStyle, { position: 'relative' }]}>
       <Pressable
         onPress={() => {
           onPieceClick(piece, square);
@@ -172,7 +256,6 @@ export function Piece({ isPremovedPiece = false, piece, square, squares }: Piece
             width={boardWidth / 8}
             height={boardWidth / 8}
             style={{
-              // Improve crispness on high DPI screens
               transform: [{ scale: 1 }],
             }}
             preserveAspectRatio="xMidYMid meet"

@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { Shuffle } from 'lucide-react-native';
+import { ChessRook, Shuffle } from 'lucide-react-native';
 import { Text, XStack, YStack, useTheme } from 'tamagui';
 
 import { ChessButton } from '@/components/ui/ChessButton';
@@ -49,13 +49,8 @@ export function SideSelectionSection({ selectedSide, onSelectSide }: SideSelecti
           selected={selectedSide === 'white'}
           onPress={() => onSelectSide('white')}
           icon={
-            <Text
-              color={selectedSide === 'white' ? '$light' : '$dark'}
-              fontSize="$6"
-              lineHeight={26}
-              textAlign="center"
-            >
-              ♖
+            <Text color={selectedSide === 'white' ? theme.light.val : theme.dark.val}>
+              <ChessRook size={24} fill={theme.light.val} />
             </Text>
           }
         />
@@ -77,13 +72,8 @@ export function SideSelectionSection({ selectedSide, onSelectSide }: SideSelecti
           selected={selectedSide === 'black'}
           onPress={() => onSelectSide('black')}
           icon={
-            <Text
-              color={selectedSide === 'black' ? '$light' : '$dark'}
-              fontSize="$6"
-              lineHeight={26}
-              textAlign="center"
-            >
-              ♜
+            <Text color={selectedSide === 'black' ? theme.light.val : theme.dark.val}>
+              <ChessRook size={24} fill={theme.dark.val} />
             </Text>
           }
         />

@@ -3,6 +3,7 @@ import { Pressable, View } from 'react-native';
 import type { ViewStyle } from 'react-native';
 import { useChessboard } from '../context/chessboard-context';
 import { Arrows } from './Arrows';
+import { DragOverlay } from './DragOverlay';
 import { WhiteKing } from './ErrorBoundary';
 import { PromotionDialog } from './PromotionDialog';
 import { Squares } from './Squares';
@@ -19,13 +20,6 @@ export function Board() {
     customBoardStyle,
   } = useChessboard();
 
-  useEffect(() => {
-    // No-op in React Native
-    return () => {
-      // Cleanup not needed
-    };
-  }, []);
-
   return boardWidth ? (
     <View>
       <View
@@ -38,6 +32,7 @@ export function Board() {
       >
         <Squares />
         <Arrows />
+        <DragOverlay />
 
         {showPromoteDialog && (
           <View>

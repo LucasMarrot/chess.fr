@@ -157,8 +157,8 @@ export const ChessboardProvider = forwardRef(
       onPieceDropOffBoard = () => {},
       onPromotionCheck = (sourceSquare, targetSquare, piece) => {
         return (
-          ((piece === 'wP' && sourceSquare[1] === '7' && targetSquare[1] === '8') ||
-            (piece === 'bP' && sourceSquare[1] === '2' && targetSquare[1] === '1')) &&
+          ((piece === 'wp' && sourceSquare[1] === '7' && targetSquare[1] === '8') ||
+            (piece === 'bp' && sourceSquare[1] === '2' && targetSquare[1] === '1')) &&
           Math.abs(sourceSquare.charCodeAt(0) - targetSquare.charCodeAt(0)) <= 1
         );
       },
@@ -388,7 +388,8 @@ export const ChessboardProvider = forwardRef(
 
       const newOnDropPosition = { ...currentPosition };
 
-      setWasManualDrop(!!wasManualDropOverride);
+      const isManualDrop = Boolean(wasManualDropOverride);
+      setWasManualDrop(isManualDrop);
       setLastPieceColour(piece[0]);
 
       // if onPieceDrop function provided, execute it, position must be updated externally and captured by useEffect above for this move to show on board
@@ -397,25 +398,23 @@ export const ChessboardProvider = forwardRef(
         if (!isValidMove) {
           clearPremoves();
           setWasManualDrop(false);
-        } else {
-          // Optimistically update position immediately to prevent snapback
-          // The external update will override this if needed
+          return;
+        }
+
+        if (!wasManualDropOverride) {
           delete newOnDropPosition[sourceSq];
           newOnDropPosition[targetSq] = piece;
           setCurrentPosition(newOnDropPosition);
         }
       } else {
-        // delete source piece
         delete newOnDropPosition[sourceSq];
 
-        // add piece in new position
         newOnDropPosition[targetSq] = piece;
         setCurrentPosition(newOnDropPosition);
       }
 
       clearPromotion();
 
-      // inform latest position information
       getPositionObject(newOnDropPosition);
     }
 
@@ -425,13 +424,11 @@ export const ChessboardProvider = forwardRef(
       delete positionCopy[square];
       setCurrentPosition(positionCopy);
 
-      // inform latest position information
       getPositionObject(positionCopy);
     }
     function attemptPremove(newPieceColour?: string) {
       if (premovesRef.current.length === 0) return;
 
-      // get current value of premove as this is called in a timeout so value may have changed since timeout was set
       const premove = premovesRef.current[0];
 
       // if premove is a differing colour to last move made, then this move can be made
@@ -442,17 +439,15 @@ export const ChessboardProvider = forwardRef(
         onPieceDrop.length
       ) {
         setLastPieceColour(premove.piece[0]);
-        setWasManualDrop(true); // pre-move doesn't need animation
+        setWasManualDrop(true);
         const isValidMove = onPieceDrop(premove.sourceSq, premove.targetSq, premove.piece);
 
-        // premove was successful and can be removed from queue
         if (isValidMove) {
           const oldPremoves = [...premovesRef.current];
           oldPremoves.shift();
           (premovesRef as React.MutableRefObject<Premove[]>).current = oldPremoves;
           setPremoves([...oldPremoves]);
         } else {
-          // premove wasn't successful, clear premove queue
           clearPremoves();
         }
       }
@@ -463,16 +458,13 @@ export const ChessboardProvider = forwardRef(
 
       if (!isValidDrop) return;
       const newOnDropPosition = { ...currentPosition };
-      // add piece in new position
       newOnDropPosition[targetSq] = piece;
       setCurrentPosition(newOnDropPosition);
 
-      // inform latest position information
       getPositionObject(newOnDropPosition);
     }
 
     function clearPremoves(clearLastPieceColour = true) {
-      // don't clear when right clicking to clear, otherwise you won't be able to premove again before next go
       if (clearLastPieceColour) setLastPieceColour(undefined);
       premovesRef.current = [];
       setPremoves([]);
@@ -490,7 +482,6 @@ export const ChessboardProvider = forwardRef(
 
     function onRightClickUp(square: Square) {
       if (currentRightClickDown) {
-        // same square, don't draw an arrow, but do clear premoves and run onSquareRightClick
         if (currentRightClickDown === square) {
           setCurrentRightClickDown(undefined);
           clearPremovesOnRightClick && clearPremoves(false);
