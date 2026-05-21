@@ -1,10 +1,17 @@
-export type ChessButtonVariant = 'primary' | 'secondary' | 'rounded' | 'selectableCard';
+export type ChessButtonVariant =
+  | 'primary'
+  | 'secondary'
+  | 'rounded'
+  | 'selectableCard'
+  | 'destructive';
 export type ChessButtonSize = 'sm' | 'md' | 'lg' | 'icon' | 'iconLg';
 export type ChessButtonTextSize = '$3' | '$4' | '$5';
 export type ChessButtonTokenColor =
   | 'dark'
   | 'light'
   | 'primary'
+  | 'danger'
+  | 'dangerDark'
   | 'buttonPrimaryHover'
   | 'buttonSecondaryHover'
   | 'buttonPrimaryBorder'
@@ -122,6 +129,21 @@ export const CHESS_BUTTON_VARIANTS: Record<ChessButtonVariant, ChessButtonVarian
       shadowOffsetY: 1,
       bottomWidth: 2,
       pressTranslateY: 1,
+    },
+  },
+  destructive: {
+    surfaceToken: 'danger',
+    textToken: 'light',
+    hoverToken: 'dangerDark',
+    depth: {
+      borderColorToken: 'buttonPrimaryBorder',
+      borderTopSideColorToken: 'buttonPrimaryBorderTop',
+      edgeColorToken: 'buttonPrimaryEdge',
+      shadowOpacity: 0.32,
+      shadowRadius: 4,
+      shadowOffsetY: 2,
+      bottomWidth: 3,
+      pressTranslateY: 2,
     },
   },
 };

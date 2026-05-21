@@ -17,10 +17,12 @@ type LocalChessUiState = {
   selectedSquare: Square | null;
   optionSquares: CustomSquareStyles;
   isHistoryCollapsed: boolean;
+  exitConfirmRequestId: number;
   selectSquare: (square: Square | null) => void;
   showMoveOptions: (targets: LocalMoveTarget[], palette: MoveOptionPalette) => void;
   setHistoryCollapsed: (collapsed: boolean) => void;
   toggleHistoryCollapsed: () => void;
+  requestExitConfirm: () => void;
   clearSelection: () => void;
   resetUi: () => void;
 };
@@ -29,6 +31,7 @@ export const useLocalChessUiStore = create<LocalChessUiState>((set) => ({
   selectedSquare: null,
   optionSquares: {},
   isHistoryCollapsed: false,
+  exitConfirmRequestId: 0,
 
   selectSquare: (square) => {
     set({ selectedSquare: square });
@@ -64,6 +67,10 @@ export const useLocalChessUiStore = create<LocalChessUiState>((set) => ({
     set((state) => ({ isHistoryCollapsed: !state.isHistoryCollapsed }));
   },
 
+  requestExitConfirm: () => {
+    set((state) => ({ exitConfirmRequestId: state.exitConfirmRequestId + 1 }));
+  },
+
   clearSelection: () => {
     set({
       selectedSquare: null,
@@ -76,6 +83,7 @@ export const useLocalChessUiStore = create<LocalChessUiState>((set) => ({
       selectedSquare: null,
       optionSquares: {},
       isHistoryCollapsed: false,
+      exitConfirmRequestId: 0,
     });
   },
 }));

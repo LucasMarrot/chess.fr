@@ -1,11 +1,12 @@
 import { Pressable } from 'react-native';
-import { Text, XStack, YStack } from 'tamagui';
+import { XStack } from 'tamagui';
 
 import { ChessButton } from '@/components/ui/ChessButton';
 
 import { defaultPieces } from '../chessboard-lib/media/pieces';
 import type { Piece } from '../chessboard-lib/types';
 
+import { LocalGameModal } from './LocalGameModal';
 import { localGameStyles } from './styles';
 import type { LocalGameTheme } from './types';
 
@@ -24,55 +25,42 @@ export const LocalGamePromotionOverlay = ({
   onCancel,
   theme,
 }: LocalGamePromotionOverlayProps) => {
-  if (!visible) return null;
-
   return (
-    <Pressable
-      style={[localGameStyles.promotionBackdrop, { backgroundColor: theme.overlayBackdrop }]}
-      onPress={onCancel}
+    <LocalGameModal
+      visible={visible}
+      title="Choisir la promotion"
+      description="Selectionne la piece de promotion."
+      onRequestClose={onCancel}
+      theme={theme}
+      actions={
+        <ChessButton variant="secondary" size="md" onPress={onCancel}>
+          Annuler
+        </ChessButton>
+      }
     >
-      <Pressable onPress={() => {}}>
-        <YStack
-          style={localGameStyles.promotionPanel}
-          backgroundColor={theme.light}
-          borderColor={theme.buttonPrimaryBorder}
-        >
-          <Text color={theme.dark} fontSize="$4" fontWeight="700">
-            Choisir la promotion
-          </Text>
-          <Text color={theme.interactionGrey} fontSize="$2">
-            Selectionne la piece de promotion.
-          </Text>
+      <XStack width="100%" gap="$3" flexWrap="nowrap">
+        {promotionOptions.map((pieceOption) => {
+          const PieceIcon = defaultPieces[pieceOption];
 
-          <XStack gap="$2" flexWrap="wrap">
-            {promotionOptions.map((pieceOption) => {
-              const PieceIcon = defaultPieces[pieceOption];
-
-              return (
-                <Pressable
-                  key={pieceOption}
-                  style={[
-                    localGameStyles.promotionOption,
-                    {
-                      borderColor: theme.buttonPrimaryBorder,
-                      backgroundColor: theme.promotionOptionBackground,
-                    },
-                  ]}
-                  onPress={() => {
-                    onConfirmPiece(pieceOption);
-                  }}
-                >
-                  {PieceIcon ? <PieceIcon /> : null}
-                </Pressable>
-              );
-            })}
-          </XStack>
-
-          <ChessButton variant="secondary" size="md" onPress={onCancel}>
-            Annuler
-          </ChessButton>
-        </YStack>
-      </Pressable>
-    </Pressable>
+          return (
+            <Pressable
+              key={pieceOption}
+              style={[
+                localGameStyles.promotionOption,
+                {
+                  borderColor: theme.buttonPrimaryBorder,
+                  backgroundColor: theme.promotionOptionBackground,
+                },
+              ]}
+              onPress={() => {
+                onConfirmPiece(pieceOption);
+              }}
+            >
+              {PieceIcon ? <PieceIcon /> : null}
+            </Pressable>
+          );
+        })}
+      </XStack>
+    </LocalGameModal>
   );
 };
