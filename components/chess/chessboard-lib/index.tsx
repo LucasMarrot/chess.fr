@@ -21,6 +21,7 @@ export const Chessboard = forwardRef<ClearPremoves, ChessboardProps>((props, ref
     customDndBackendOptions,
     onBoardWidthChange,
     boardWidth: initialBoardWidth,
+    boardOrientation,
     ...otherProps
   } = props;
 
@@ -36,9 +37,14 @@ export const Chessboard = forwardRef<ClearPremoves, ChessboardProps>((props, ref
       <View style={{ flexDirection: 'column', width: '100%' }}>
         <View onLayout={handleBoardLayout} style={{ width: '100%' }} />
 
-        <ChessboardDnDProvider>
+        <ChessboardDnDProvider key={boardOrientation}>
           {boardWidth > 0 && (
-            <ChessboardProvider boardWidth={boardWidth} {...otherProps} ref={ref}>
+            <ChessboardProvider
+              boardWidth={boardWidth}
+              boardOrientation={boardOrientation}
+              {...otherProps}
+              ref={ref}
+            >
               <Board />
             </ChessboardProvider>
           )}

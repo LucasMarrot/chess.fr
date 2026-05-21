@@ -30,11 +30,17 @@ import { useLocalChessUiStore } from './stores/use-local-chess-ui-store';
 
 type LocalChessGameProps = {
   timeControl: LocalTimeControlPreset;
+  initialOrientation?: 'white' | 'black';
   onExit: () => void;
   onReturnHome: () => void;
 };
 
-export const LocalChessGame = ({ timeControl, onExit, onReturnHome }: LocalChessGameProps) => {
+export const LocalChessGame = ({
+  timeControl,
+  initialOrientation,
+  onExit,
+  onReturnHome,
+}: LocalChessGameProps) => {
   const chessboardRef = useRef<ClearPremoves>(null);
   const lastExitConfirmRequestIdRef = useRef<number | null>(null);
   const tokens = getTokens();
@@ -172,10 +178,10 @@ export const LocalChessGame = ({ timeControl, onExit, onReturnHome }: LocalChess
   }));
 
   useEffect(() => {
-    startGame(timeControl);
+    startGame(timeControl, initialOrientation);
     resetUi();
     setCaptureFlashSquare(null);
-  }, [resetUi, startGame, timeControl]);
+  }, [initialOrientation, resetUi, startGame, timeControl]);
 
   useEffect(() => {
     const interval = setInterval(() => {

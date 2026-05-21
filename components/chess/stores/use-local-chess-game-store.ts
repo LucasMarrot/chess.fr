@@ -81,6 +81,7 @@ type LocalChessGameState = {
   fen: string;
   turn: Color;
   boardOrientation: BoardOrientation;
+  preferredOrientation: BoardOrientation;
   status: LocalGameStatus;
   result: LocalGameResult | null;
   whiteKingInCheck: boolean;
@@ -93,7 +94,7 @@ type LocalChessGameState = {
   timeControl: LocalTimeControlPreset;
   clocks: LocalClockState;
   config: LocalGameConfig;
-  startGame: (timeControl: LocalTimeControlPreset) => void;
+  startGame: (timeControl: LocalTimeControlPreset, orientation?: BoardOrientation) => void;
   resetGame: () => void;
   tickClock: (now?: number) => void;
   declareDraw: () => void;
@@ -333,6 +334,7 @@ function createInitialChessState(timeControl: LocalTimeControlPreset) {
     fen: chess.fen(),
     turn: chess.turn(),
     boardOrientation: 'white' as BoardOrientation,
+    preferredOrientation: 'white' as BoardOrientation,
     status: status.status,
     result: status.result,
     pendingPromotion: null as PendingPromotion | null,
@@ -439,11 +441,13 @@ export const useLocalChessGameStore = create<LocalChessGameState>((set, get) => 
     autoPromoteToQueen: false,
   },
 
-  startGame: (timeControl) => {
+  startGame: (timeControl, orientation) => {
+    const initialOrientation = orientation ?? 'white';
     const fresh = createInitialChessState(timeControl);
     set({
       ...fresh,
-      boardOrientation: 'white',
+      boardOrientation: initialOrientation,
+      preferredOrientation: initialOrientation,
       config: {
         ...get().config,
         autoFlip: false,
@@ -452,10 +456,12 @@ export const useLocalChessGameStore = create<LocalChessGameState>((set, get) => 
   },
 
   resetGame: () => {
+    const preferredOrientation = get().preferredOrientation ?? 'white';
     const fresh = createInitialChessState(get().timeControl);
     set({
       ...fresh,
-      boardOrientation: 'white',
+      boardOrientation: preferredOrientation,
+      preferredOrientation,
       config: {
         ...get().config,
         autoFlip: false,

@@ -126,22 +126,30 @@ export function Squares() {
               const piece = currentPosition[square];
 
               return (
-                <View key={`${c}${r}`} style={{ position: 'relative' }}>
-                  <Droppable id={square}>
+                <View key={square} style={{ position: 'relative' }}>
+                  <Droppable id={square} key={`drop-${square}`}>
                     <Square
-                      key={`${c}${r}`}
+                      key={square}
                       square={square}
                       squareColor={squareColor}
                       setSquares={setSquares}
                       squareHasPremove={!!squareHasPremove}
                     >
                       {!squareHasPremove && piece && (
-                        <Draggable id={`${square}-${piece}`} disabled={!canDrag}>
+                        <Draggable
+                          id={`${square}-${piece}`}
+                          key={`drag-${square}-${piece}`}
+                          disabled={!canDrag}
+                        >
                           <Piece piece={piece as Pc} square={square} squares={squares} />
                         </Draggable>
                       )}
                       {squareHasPremoveTarget && (
-                        <Draggable id={`${square}-${squareHasPremoveTarget.piece}`} disabled={true}>
+                        <Draggable
+                          id={`${square}-${squareHasPremoveTarget.piece}`}
+                          key={`drag-${square}-${squareHasPremoveTarget.piece}`}
+                          disabled={true}
+                        >
                           <Piece
                             isPremovedPiece={true}
                             piece={squareHasPremoveTarget.piece}
