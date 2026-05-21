@@ -3,13 +3,24 @@ import { ChevronLeft } from 'lucide-react-native';
 import { Text, useTheme } from 'tamagui';
 
 import { AppHeader } from '@/components/headers';
+import { useLocalChessUiStore } from '@/components/chess/stores/use-local-chess-ui-store';
 import { ChessButton } from '@/components/ui/ChessButton';
 
 function LocalGameHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const theme = useTheme();
+  const requestExitConfirm = useLocalChessUiStore((state) => state.requestExitConfirm);
   const title = pathname.endsWith('/play') ? 'Partie en cours' : 'Configuration locale';
+
+  const handleBackPress = () => {
+    if (pathname.endsWith('/play')) {
+      requestExitConfirm();
+      return;
+    }
+
+    router.replace('/(tabs)');
+  };
 
   return (
     <AppHeader
@@ -22,7 +33,7 @@ function LocalGameHeader() {
         <ChessButton
           variant="rounded"
           size="icon"
-          onPress={() => router.replace('/(tabs)')}
+          onPress={handleBackPress}
           iconLeft={<ChevronLeft size={18} color={theme.dark.val} />}
         />
       }

@@ -96,6 +96,7 @@ type LocalChessGameState = {
   startGame: (timeControl: LocalTimeControlPreset) => void;
   resetGame: () => void;
   tickClock: (now?: number) => void;
+  declareDraw: () => void;
   flipBoard: () => void;
   setAutoFlip: (enabled: boolean) => void;
   setAutoPromoteToQueen: (enabled: boolean) => void;
@@ -485,6 +486,29 @@ export const useLocalChessGameStore = create<LocalChessGameState>((set, get) => 
     if (elapsedState.clocks !== state.clocks) {
       set({ clocks: elapsedState.clocks });
     }
+  },
+
+  declareDraw: () => {
+    set((state) => {
+      if (state.result) {
+        return state;
+      }
+
+      return {
+        status: 'draw',
+        result: {
+          outcome: 'draw',
+          reason: 'draw',
+        },
+        pendingPromotion: null,
+        clocks: {
+          ...state.clocks,
+          activeColor: null,
+          started: true,
+          lastTickAt: null,
+        },
+      };
+    });
   },
 
   flipBoard: () => {

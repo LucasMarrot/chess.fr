@@ -17,6 +17,8 @@ import type { ClearPremoves } from './ChessBoard';
 import { LocalGameActionBar } from './local-game/LocalGameActionBar';
 import { LocalGameBoardSection } from './local-game/LocalGameBoardSection';
 import { LocalGameClock } from './local-game/LocalGameClock';
+import { LocalGameDrawConfirmOverlay } from './local-game/LocalGameDrawConfirmOverlay';
+import { LocalGameExitConfirmOverlay } from './local-game/LocalGameExitConfirmOverlay';
 import { LocalGamePromotionOverlay } from './local-game/LocalGamePromotionOverlay';
 import { LocalGameResultOverlay } from './local-game/LocalGameResultOverlay';
 import { localGameStyles } from './local-game/styles';
@@ -29,11 +31,12 @@ import { useLocalChessUiStore } from './stores/use-local-chess-ui-store';
 type LocalChessGameProps = {
   timeControl: LocalTimeControlPreset;
   onExit: () => void;
+  onReturnHome: () => void;
 };
 
-export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => {
+export const LocalChessGame = ({ timeControl, onExit, onReturnHome }: LocalChessGameProps) => {
   const chessboardRef = useRef<ClearPremoves>(null);
-  const lastFlipTapAtRef = useRef(0);
+  const lastExitConfirmRequestIdRef = useRef<number | null>(null);
   const tokens = getTokens();
   const { width } = useWindowDimensions();
 
@@ -85,6 +88,7 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     startGame,
     resetGame,
     tickClock,
+    declareDraw,
     flipBoard,
     attemptMove,
     cancelPromotion,
@@ -107,6 +111,7 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
       startGame: state.startGame,
       resetGame: state.resetGame,
       tickClock: state.tickClock,
+      declareDraw: state.declareDraw,
       flipBoard: state.flipBoard,
       attemptMove: state.attemptMove,
       cancelPromotion: state.cancelPromotion,
@@ -115,19 +120,29 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     })),
   );
 
-  const { selectedSquare, optionSquares, selectSquare, showMoveOptions, clearSelection, resetUi } =
-    useLocalChessUiStore(
-      useShallow((state) => ({
-        selectedSquare: state.selectedSquare,
-        optionSquares: state.optionSquares,
-        selectSquare: state.selectSquare,
-        showMoveOptions: state.showMoveOptions,
-        clearSelection: state.clearSelection,
-        resetUi: state.resetUi,
-      })),
-    );
+  const {
+    selectedSquare,
+    optionSquares,
+    exitConfirmRequestId,
+    selectSquare,
+    showMoveOptions,
+    clearSelection,
+    resetUi,
+  } = useLocalChessUiStore(
+    useShallow((state) => ({
+      selectedSquare: state.selectedSquare,
+      optionSquares: state.optionSquares,
+      exitConfirmRequestId: state.exitConfirmRequestId,
+      selectSquare: state.selectSquare,
+      showMoveOptions: state.showMoveOptions,
+      clearSelection: state.clearSelection,
+      resetUi: state.resetUi,
+    })),
+  );
 
   const [captureFlashSquare, setCaptureFlashSquare] = useState<Square | null>(null);
+  const [isDrawConfirmOpen, setIsDrawConfirmOpen] = useState(false);
+  const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
 
   const boardSize = useMemo(() => {
     const maxWidth = 560;
@@ -169,6 +184,20 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
 
     return () => clearInterval(interval);
   }, [tickClock]);
+
+  useEffect(() => {
+    if (lastExitConfirmRequestIdRef.current === null) {
+      lastExitConfirmRequestIdRef.current = exitConfirmRequestId;
+      return;
+    }
+
+    if (exitConfirmRequestId <= lastExitConfirmRequestIdRef.current) {
+      return;
+    }
+
+    lastExitConfirmRequestIdRef.current = exitConfirmRequestId;
+    setIsExitConfirmOpen(true);
+  }, [exitConfirmRequestId]);
 
   useEffect(() => {
     if (!lastMove || !lastMove.isCapture) return;
@@ -367,18 +396,54 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
     resetGame();
   };
 
+  const resetBeforeExit = () => {
+    chessboardRef.current?.clearPremoves();
+    resetUi();
+    setCaptureFlashSquare(null);
+    setIsDrawConfirmOpen(false);
+    setIsExitConfirmOpen(false);
+    resetGame();
+  };
+
+  const handleExitPress = () => {
+    setIsExitConfirmOpen(true);
+  };
+
+  const handleCancelExit = () => {
+    setIsExitConfirmOpen(false);
+  };
+
+  const handleConfirmExit = () => {
+    resetBeforeExit();
+    onExit();
+  };
+
+  const handleReturnHomePress = () => {
+    resetBeforeExit();
+    onReturnHome();
+  };
+
   const handleFlipPress = () => {
-    const now = Date.now();
-    const isDoubleTap = now - lastFlipTapAtRef.current <= 280;
-
-    if (isDoubleTap) {
-      setAutoFlip(true);
-      lastFlipTapAtRef.current = 0;
-      return;
-    }
-
-    lastFlipTapAtRef.current = now;
     flipBoard();
+  };
+
+  const handleAutoFlipPress = () => {
+    setAutoFlip(!config.autoFlip);
+  };
+
+  const handleDrawPress = () => {
+    if (result) return;
+    setIsDrawConfirmOpen(true);
+  };
+
+  const handleCancelDraw = () => {
+    setIsDrawConfirmOpen(false);
+  };
+
+  const handleConfirmDraw = () => {
+    setIsDrawConfirmOpen(false);
+    clearSelection();
+    declareDraw();
   };
 
   const { topClock, bottomClock } = useMemo(
@@ -453,8 +518,10 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
 
       <LocalGameActionBar
         isAutoFlipEnabled={config.autoFlip}
-        onExitPress={onExit}
+        onExitPress={handleExitPress}
+        onDrawPress={handleDrawPress}
         onFlipPress={handleFlipPress}
+        onAutoFlipPress={handleAutoFlipPress}
       />
 
       <LocalGamePromotionOverlay
@@ -465,10 +532,24 @@ export const LocalChessGame = ({ timeControl, onExit }: LocalChessGameProps) => 
         theme={uiTheme}
       />
 
+      <LocalGameDrawConfirmOverlay
+        visible={isDrawConfirmOpen}
+        onCancel={handleCancelDraw}
+        onConfirm={handleConfirmDraw}
+        theme={uiTheme}
+      />
+
+      <LocalGameExitConfirmOverlay
+        visible={isExitConfirmOpen}
+        onCancel={handleCancelExit}
+        onConfirm={handleConfirmExit}
+        theme={uiTheme}
+      />
+
       <LocalGameResultOverlay
         result={result}
         onReplay={handleReplay}
-        onExit={onExit}
+        onExit={handleReturnHomePress}
         theme={uiTheme}
       />
     </View>
