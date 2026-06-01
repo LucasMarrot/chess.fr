@@ -28,6 +28,17 @@ const animations = createAnimations({
     tension: 100,
     friction: 15,
   },
+  fast: {
+    type: 'spring',
+    damping: 20,
+    stiffness: 250,
+  },
+  bouncy: {
+    type: 'spring',
+    damping: 10,
+    mass: 0.9,
+    stiffness: 100,
+  },
 });
 
 const tokens = createTokens({

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Text, YStack } from 'tamagui';
-import { Link } from 'expo-router';
+import { Text, YStack, XStack } from 'tamagui';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/lib/supabase';
@@ -18,7 +17,6 @@ export default function LoginScreen() {
     control,
     handleSubmit,
     formState: { errors },
-    getValues,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
@@ -27,7 +25,7 @@ export default function LoginScreen() {
   async function onSubmit(data: LoginFormValues) {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email: data.email.trim(),
+      email: data.email.trim().toLowerCase(),
       password: data.password,
     });
 
@@ -37,63 +35,56 @@ export default function LoginScreen() {
     setLoading(false);
   }
 
-  async function handleForgotPassword() {
-    const email = getValues('email');
-    if (!email) {
-      toast.show('Attention', {
-        message:
-          'Veuillez entrer votre email dans le champ prévu à cet effet pour réinitialiser le mot de passe.',
-      });
-      return;
-    }
-
-    setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
-    if (error) {
-      toast.show('Erreur', { message: error.message });
-    } else {
-      toast.show('Email envoyé', { message: 'Un lien de réinitialisation vous a été envoyé.' });
-    }
-    setLoading(false);
-  }
-
   return (
-    <YStack flex={1} justifyContent="center" alignItems="center" backgroundColor="$background">
-      {/* Conteneur principal à 80% centré */}
-      <YStack width="80%" maxWidth={400} gap="$5">
-        <YStack gap="$2" marginBottom="$4" alignItems="center">
-          <Text fontSize="$9" fontWeight="700">
+    <YStack
+      flex={1}
+      justifyContent="center"
+      alignItems="center"
+      backgroundColor="$background"
+      padding="$4"
+    >
+      <YStack width="100%" maxWidth={400} gap="$6" padding="$4">
+        <YStack gap="$2" alignItems="center">
+          <Text fontSize="$9" fontWeight="800">
             Chess.fr
           </Text>
         </YStack>
 
-        <YStack gap="$3">
+        <YStack gap="$4">
           <FormInput
             name="email"
             control={control}
             label="Email"
             keyboardType="email-address"
+            autoCapitalize="none"
             error={errors.email?.message}
           />
 
-          <FormInput
-            name="password"
-            control={control}
-            label="Mot de passe"
-            secureTextEntry
-            error={errors.password?.message}
-          />
+          <YStack gap="$2">
+            <FormInput
+              name="password"
+              control={control}
+              label="Mot de passe"
+              secureTextEntry // C'est tout ce qu'il faut maintenant !
+              error={errors.password?.message}
+            />
+
+            {/* Ligne d'actions sous le mot de passe nettoyée */}
+            <XStack justifyContent="flex-end" alignItems="center" marginTop="$1">
+              <ChessLink
+                href="/forgot-password"
+                disabled={loading}
+                fontSize="$3"
+                color="$color11"
+                hoverStyle={{ opacity: 0.8 }}
+              >
+                Mot de passe oublié ?
+              </ChessLink>
+            </XStack>
+          </YStack>
         </YStack>
 
-        <ChessLink
-          href="/forgot-password"
-          disabled={loading}
-          className="text-[5px] inline-block text-left"
-        >
-          Mot de passe oublié ?
-        </ChessLink>
-
-        <YStack gap="$3" marginTop="$2">
+        <YStack gap="$4" marginTop="$2">
           <ChessButton
             loading={loading}
             variant="primary"
@@ -104,9 +95,14 @@ export default function LoginScreen() {
             Se connecter
           </ChessButton>
 
-          <ChessButton href="/register" variant="ghost" size="sm" fullWidth disabled={loading}>
-            Pas de compte ? Créer un profil
-          </ChessButton>
+          <YStack alignItems="center" gap="$2" marginTop="$4">
+            <Text fontSize="$3" color="$color11">
+              Pas encore de compte ?
+            </Text>
+            <ChessButton href="/register" variant="ghost" size="sm" fullWidth disabled={loading}>
+              Créer un profil
+            </ChessButton>
+          </YStack>
         </YStack>
       </YStack>
     </YStack>
