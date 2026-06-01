@@ -83,7 +83,7 @@ export const localGameStyles = StyleSheet.create({
   modalActionsRow: {
     marginTop: 8,
     gap: 10,
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'flex-end',
   },
   modalContentInset: {
@@ -129,6 +129,8 @@ export const localGameStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: 18,
+    paddingHorizontal: 14,
+    paddingTop: 18,
   },
 });

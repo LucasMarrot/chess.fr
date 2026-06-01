@@ -25,10 +25,10 @@ export const LocalGameExitConfirmOverlay = ({
       theme={theme}
       actions={
         <>
-          <ChessButton variant="secondary" size="md" onPress={onCancel}>
+          <ChessButton variant="secondary" size="md" flex={1} onPress={onCancel}>
             Annuler
           </ChessButton>
-          <ChessButton variant="primary" size="md" onPress={onConfirm}>
+          <ChessButton variant="primary" size="md" flex={1} onPress={onConfirm}>
             Quitter
           </ChessButton>
         </>

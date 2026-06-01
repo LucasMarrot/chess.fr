@@ -11,6 +11,7 @@ type LocalGameActionBarProps = {
   onDrawPress: () => void;
   onFlipPress: () => void;
   onAutoFlipPress: () => void;
+  isSpectator?: boolean;
 };
 
 export const LocalGameActionBar = ({
@@ -19,31 +20,34 @@ export const LocalGameActionBar = ({
   onDrawPress,
   onFlipPress,
   onAutoFlipPress,
+  isSpectator = false,
 }: LocalGameActionBarProps) => {
   const theme = useTheme();
 
   return (
     <XStack style={localGameStyles.actionsRow}>
-      <YStack alignItems="center" gap="$2">
-        <ChessButton
-          variant="selectableCard"
-          shape="circle"
-          size="iconLg"
-          selected={isAutoFlipEnabled}
-          onPress={onAutoFlipPress}
-          iconLeft={
-            isAutoFlipEnabled ? (
-              <Repeat size={24} color={theme.light.val} />
-            ) : (
-              <RepeatOff size={24} color={theme.dark.val} />
-            )
-          }
-        />
-        <Text color="$interactionGrey" fontSize="$3" fontWeight="700">
-          Auto-Flip
-        </Text>
-      </YStack>
-      {!isAutoFlipEnabled ? (
+      {!isSpectator ? (
+        <YStack alignItems="center" gap="$2">
+          <ChessButton
+            variant="selectableCard"
+            shape="circle"
+            size="iconLg"
+            selected={isAutoFlipEnabled}
+            onPress={onAutoFlipPress}
+            iconLeft={
+              isAutoFlipEnabled ? (
+                <Repeat size={24} color={theme.light.val} />
+              ) : (
+                <RepeatOff size={24} color={theme.dark.val} />
+              )
+            }
+          />
+          <Text color="$interactionGrey" fontSize="$3" fontWeight="700">
+            Auto-Flip
+          </Text>
+        </YStack>
+      ) : null}
+      {!isAutoFlipEnabled && !isSpectator ? (
         <YStack alignItems="center" gap="$2">
           <ChessButton
             variant="selectableCard"
@@ -57,18 +61,20 @@ export const LocalGameActionBar = ({
           </Text>
         </YStack>
       ) : null}
-      <YStack alignItems="center" gap="$2">
-        <ChessButton
-          variant="selectableCard"
-          shape="circle"
-          size="iconLg"
-          onPress={onDrawPress}
-          iconLeft={<Handshake size={24} color={theme.dark.val} />}
-        />
-        <Text color="$interactionGrey" fontSize="$3" fontWeight="700">
-          Draw
-        </Text>
-      </YStack>
+      {!isSpectator ? (
+        <YStack alignItems="center" gap="$2">
+          <ChessButton
+            variant="selectableCard"
+            shape="circle"
+            size="iconLg"
+            onPress={onDrawPress}
+            iconLeft={<Handshake size={24} color={theme.dark.val} />}
+          />
+          <Text color="$interactionGrey" fontSize="$3" fontWeight="700">
+            Draw
+          </Text>
+        </YStack>
+      ) : null}
       <YStack alignItems="center" gap="$2">
         <ChessButton
           variant="destructive"

@@ -116,6 +116,15 @@ function TabsBar({
     { jouer: null, profil: null },
   );
 
+  const handlePlayOnline = () => {
+    router.push({
+      pathname: '/local-game/config',
+      params: {
+        mode: 'online',
+      },
+    });
+  };
+
   useEffect(() => {
     const activeLayout = tabLayouts[activeTab];
     if (!activeLayout) return;
@@ -134,7 +143,10 @@ function TabsBar({
   return (
     <YStack>
       {activeTab === 'jouer' ? (
-        <QuickPlayBar onPlayLocal={() => router.push('/local-game/config')} />
+        <QuickPlayBar
+          onPlayOnline={handlePlayOnline}
+          onPlayLocal={() => router.push('/local-game/config')}
+        />
       ) : null}
       <Container style={{ position: 'relative' }}>
         <Animated.View

@@ -13,6 +13,8 @@ type LocalGameResultOverlayProps = {
   onReplay: () => void;
   onExit: () => void;
   theme: LocalGameTheme;
+  canReplay?: boolean;
+  replayLabel?: string;
 };
 
 export const LocalGameResultOverlay = ({
@@ -20,6 +22,8 @@ export const LocalGameResultOverlay = ({
   onReplay,
   onExit,
   theme,
+  canReplay = true,
+  replayLabel = 'Rejouer',
 }: LocalGameResultOverlayProps) => {
   return (
     <LocalGameModal
@@ -33,10 +37,34 @@ export const LocalGameResultOverlay = ({
       theme={theme}
       actions={
         <>
-          <ChessButton variant="primary" size="md" onPress={onReplay}>
-            Rejouer
-          </ChessButton>
-          <ChessButton variant="secondary" size="md" onPress={onExit}>
+          {canReplay ? (
+            <ChessButton
+              variant="primary"
+              size="md"
+              flex={1}
+              onPress={onReplay}
+              textProps={{
+                numberOfLines: 1,
+                adjustsFontSizeToFit: true,
+                minimumFontScale: 0.75,
+                textAlign: 'center',
+              }}
+            >
+              {replayLabel}
+            </ChessButton>
+          ) : null}
+          <ChessButton
+            variant="secondary"
+            size="md"
+            flex={1}
+            onPress={onExit}
+            textProps={{
+              numberOfLines: 1,
+              adjustsFontSizeToFit: true,
+              minimumFontScale: 0.75,
+              textAlign: 'center',
+            }}
+          >
             Revenir a la Home
           </ChessButton>
         </>

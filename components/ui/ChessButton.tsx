@@ -22,6 +22,7 @@ interface ChessButtonProps {
   disabled?: boolean;
   loading?: boolean;
   fullWidth?: boolean;
+  flex?: number;
   iconLeft?: React.ReactNode;
   textProps?: React.ComponentProps<typeof Text>;
 }
@@ -64,6 +65,7 @@ export const ChessButton = ({
   disabled = false,
   loading = false,
   fullWidth = false,
+  flex,
   iconLeft,
   textProps,
 }: ChessButtonProps) => {
@@ -137,13 +139,14 @@ export const ChessButton = ({
       }}
       borderRadius={borderRadius}
       height={buttonSize.height}
+      flex={flex}
       paddingHorizontal={
         isIconOnly || shape === 'circle'
           ? CHESS_BUTTON_INTERACTION.iconHorizontalPaddingWhenIconOnly
           : buttonSize.horizontalPadding
       }
       width={shape === 'circle' ? buttonSize.height : undefined}
-      minWidth={isIconOnly || shape === 'circle' ? buttonSize.height : undefined}
+      minWidth={isIconOnly || shape === 'circle' ? buttonSize.height : flex ? 0 : undefined}
       cursor={isActionDisabled ? BUTTON_FEEDBACK.cursorDisabled : BUTTON_FEEDBACK.cursorPointer}
       backgroundColor={colors.backgroundColor}
       borderWidth={CHESS_BUTTON_INTERACTION.borderWidth}

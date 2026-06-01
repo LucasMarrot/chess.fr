@@ -7,6 +7,15 @@ import { AppHeader } from '@/components/headers/AppHeader';
 export default function HomeScreen() {
   const router = useRouter();
 
+  const handlePlayOnline = () => {
+    router.push({
+      pathname: '/local-game/config',
+      params: {
+        mode: 'online',
+      },
+    });
+  };
+
   return (
     <>
       <AppHeader />
@@ -18,8 +27,11 @@ export default function HomeScreen() {
         p="$4"
       >
         <YStack width="100%" maxWidth={360} alignItems="center" gap="$4">
+          <ChessButton variant="primary" size="lg" fullWidth onPress={handlePlayOnline}>
+            Jouer en ligne
+          </ChessButton>
           <ChessButton
-            variant="primary"
+            variant="secondary"
             size="lg"
             fullWidth
             onPress={() => router.push('/local-game/config')}

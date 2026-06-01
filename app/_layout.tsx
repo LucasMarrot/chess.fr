@@ -42,8 +42,9 @@ export default function RootLayout() {
     if (!initialized) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inPublicOnlineGame = segments[0] === 'local-game';
 
-    if (!session && !inAuthGroup) {
+    if (!session && !inAuthGroup && !inPublicOnlineGame) {
       // Pas de session -> redirection vers login
       router.replace('/(auth)/login');
     } else if (session && inAuthGroup) {
