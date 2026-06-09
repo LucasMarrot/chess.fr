@@ -13,6 +13,8 @@ import { useShallow } from 'zustand/react/shallow';
 
 import type { LocalTimeControlPreset } from '@/constants/local-time-controls';
 import { ChessButton } from '@/components/ui/ChessButton';
+import { getEloCategory, submitRankedGameResult } from '@/lib/elo';
+import { fetchCurrentAuthProfile } from '@/lib/auth-profile';
 import { supabase } from '@/lib/supabase';
 
 import type { ClearPremoves } from './ChessBoard';
@@ -78,6 +80,9 @@ type OnlineRematchPayload = {
 
 type OnlineParticipant = {
   clientId: string;
+  userId: string;
+  displayName: string;
+  elo: number;
   requestedColor: 'white' | 'black';
   joinedAt: number;
 };
@@ -103,6 +108,9 @@ function getOnlineParticipantsFromPresenceState(state: Record<string, unknown>) 
     .filter(
       (value): value is OnlineParticipant =>
         typeof value.clientId === 'string' &&
+        typeof value.userId === 'string' &&
+        typeof value.displayName === 'string' &&
+        typeof value.elo === 'number' &&
         (value.requestedColor === 'white' || value.requestedColor === 'black') &&
         typeof value.joinedAt === 'number',
     )
@@ -122,6 +130,56 @@ function getOppositeOnlineColor(color: 'white' | 'black') {
   return color === 'white' ? 'black' : 'white';
 }
 
+function getParticipantFallbackName(color: 'white' | 'black') {
+  return color === 'white' ? 'Blancs' : 'Noirs';
+}
+
+function OnlinePlayerBadge({
+  participant,
+  color,
+  theme,
+  align = 'left',
+  maxWidth = 185,
+}: {
+  participant?: Pick<OnlineParticipant, 'displayName' | 'elo'>;
+  color: 'white' | 'black';
+  theme: LocalGameTheme;
+  align?: 'left' | 'right';
+  maxWidth?: number;
+}) {
+  const isCompact = maxWidth <= 150;
+
+  return (
+    <YStack
+      style={localGameStyles.playerBadge}
+      width={maxWidth}
+      maxWidth={maxWidth}
+      gap="$1"
+      alignItems={align === 'right' ? 'flex-end' : 'flex-start'}
+    >
+      <Text
+        color={theme.dark}
+        fontSize={isCompact ? '$4' : '$5'}
+        fontWeight="800"
+        numberOfLines={1}
+        textAlign={align}
+        width="100%"
+      >
+        {participant?.displayName || getParticipantFallbackName(color)}
+      </Text>
+      <Text
+        color={theme.interactionGrey}
+        fontSize={isCompact ? '$3' : '$4'}
+        fontWeight="800"
+        textAlign={align}
+        width="100%"
+      >
+        {participant?.elo ?? 1200}
+      </Text>
+    </YStack>
+  );
+}
+
 export const LocalChessGame = ({
   timeControl,
   initialOrientation,
@@ -137,6 +195,7 @@ export const LocalChessGame = ({
   const seenOnlineMoveIdsRef = useRef(new Set<string>());
   const onlineClientIdRef = useRef(createOnlineClientId());
   const onlineSnapshotRef = useRef<RemoteGameSnapshot>({ fen: '', lastMove: null });
+  const submittedRankedResultKeyRef = useRef<string | null>(null);
   const tokens = getTokens();
   const { width } = useWindowDimensions();
 
@@ -255,7 +314,12 @@ export const LocalChessGame = ({
   const [incomingRematchOfferId, setIncomingRematchOfferId] = useState<string | null>(null);
   const [isRematchOfferPending, setIsRematchOfferPending] = useState(false);
   const [activeOnlineColor, setActiveOnlineColor] = useState<'white' | 'black' | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentDisplayName, setCurrentDisplayName] = useState('Joueur');
+  const [currentElo, setCurrentElo] = useState(1200);
+  const [rankedGameIndex, setRankedGameIndex] = useState(0);
 
+  const eloCategory = useMemo(() => getEloCategory(timeControl), [timeControl]);
   const isOnlineGame = Boolean(onlineRoomId && onlinePlayerColor);
   const onlineRole = isOnlineGame
     ? resolveOnlineRole(onlineClientIdRef.current, onlineParticipants)
@@ -275,6 +339,33 @@ export const LocalChessGame = ({
   );
   const hasTwoOnlinePlayers = hasWhiteOnlinePlayer && hasBlackOnlinePlayer;
   const isConfirmedSpectator = isOnlineGame && hasTwoOnlinePlayers && !isOnlinePlayer;
+  const opponentOnlineParticipant = onlineParticipants.find(
+    (participant) =>
+      participant.userId !== currentUserId &&
+      resolveOnlineRole(participant.clientId, onlineParticipants) !== 'spectator',
+  );
+  const currentOnlineParticipant = onlineParticipants.find(
+    (participant) => participant.clientId === onlineClientIdRef.current,
+  );
+  const requestedWhiteParticipant = onlineParticipants.find(
+    (participant) => resolveOnlineRole(participant.clientId, onlineParticipants) === 'white',
+  );
+  const requestedBlackParticipant = onlineParticipants.find(
+    (participant) => resolveOnlineRole(participant.clientId, onlineParticipants) === 'black',
+  );
+  const participantByActiveColor = {
+    ...(isConfirmedSpectator
+      ? {
+          white: requestedWhiteParticipant,
+          black: requestedBlackParticipant,
+        }
+      : {
+          [playerOnlineColor]: currentOnlineParticipant,
+          [getOppositeOnlineColor(playerOnlineColor)]: opponentOnlineParticipant,
+        }),
+  } as Record<'white' | 'black', OnlineParticipant | undefined>;
+  const topBadgeColor = boardOrientation === 'white' ? 'black' : 'white';
+  const bottomBadgeColor = boardOrientation === 'white' ? 'white' : 'black';
   const waitingCardWidth = Math.max(280, Math.min(width - 32, 390));
 
   const boardSize = useMemo(() => {
@@ -306,6 +397,8 @@ export const LocalChessGame = ({
 
   const resetOnlineGameWithColor = useCallback(
     (nextColor: 'white' | 'black') => {
+      submittedRankedResultKeyRef.current = null;
+      setRankedGameIndex((value) => value + 1);
       setActiveOnlineColor(nextColor);
       chessboardRef.current?.clearPremoves();
       resetUi();
@@ -324,9 +417,31 @@ export const LocalChessGame = ({
 
   useEffect(() => {
     startGame(timeControl, initialOrientation);
+    submittedRankedResultKeyRef.current = null;
+    setRankedGameIndex(0);
     resetUi();
     setCaptureFlashSquare(null);
   }, [initialOrientation, resetUi, startGame, timeControl]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!isMounted) return;
+      setCurrentUserId(data.user?.id ?? null);
+
+      if (!data.user) return;
+
+      const profile = await fetchCurrentAuthProfile();
+      if (!isMounted) return;
+      setCurrentDisplayName(profile.name);
+      setCurrentElo(profile.elo[eloCategory]);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [eloCategory]);
 
   useEffect(() => {
     if (!isOnlinePlayer || activeOnlineColor) return;
@@ -341,7 +456,7 @@ export const LocalChessGame = ({
   }, [fen, lastMove, moveHistory.length]);
 
   useEffect(() => {
-    if (!onlineRoomId || !onlinePlayerColor) {
+    if (!onlineRoomId || !onlinePlayerColor || !currentUserId) {
       setOnlineParticipants([]);
       setActiveOnlineColor(null);
       return;
@@ -490,6 +605,9 @@ export const LocalChessGame = ({
 
         void channel.track({
           clientId,
+          userId: currentUserId,
+          displayName: currentDisplayName,
+          elo: currentElo,
           requestedColor: onlinePlayerColor,
           joinedAt: Date.now(),
         } satisfies OnlineParticipant);
@@ -505,6 +623,9 @@ export const LocalChessGame = ({
     applyRemoteMove,
     applyRemoteSnapshot,
     clearSelection,
+    currentUserId,
+    currentDisplayName,
+    currentElo,
     declareDraw,
     onlinePlayerColor,
     onlineRoomId,
@@ -561,6 +682,42 @@ export const LocalChessGame = ({
       ),
     );
   }, [capturePulse, lastMove]);
+
+  useEffect(() => {
+    if (!result || !isOnlineGame || !onlineRoomId || !currentUserId) return;
+    if (!isOnlinePlayer || isConfirmedSpectator) return;
+    if (!opponentOnlineParticipant?.userId) return;
+
+    const currentGameWhitePlayerId =
+      playerOnlineColor === 'white' ? currentUserId : opponentOnlineParticipant.userId;
+    const currentGameBlackPlayerId =
+      playerOnlineColor === 'black' ? currentUserId : opponentOnlineParticipant.userId;
+
+    if (currentUserId !== currentGameWhitePlayerId) return;
+
+    const submissionKey = `${onlineRoomId}:${rankedGameIndex}`;
+    if (submittedRankedResultKeyRef.current === submissionKey) return;
+    submittedRankedResultKeyRef.current = submissionKey;
+
+    void submitRankedGameResult({
+      roomId: submissionKey,
+      category: eloCategory,
+      whitePlayerId: currentGameWhitePlayerId,
+      blackPlayerId: currentGameBlackPlayerId,
+      result,
+    });
+  }, [
+    currentUserId,
+    isConfirmedSpectator,
+    isOnlineGame,
+    isOnlinePlayer,
+    onlineRoomId,
+    opponentOnlineParticipant?.userId,
+    playerOnlineColor,
+    rankedGameIndex,
+    result,
+    eloCategory,
+  ]);
 
   const selectedSquareStyles = useMemo(() => {
     if (!selectedSquare) return {};
@@ -998,11 +1155,18 @@ export const LocalChessGame = ({
   );
   const baseClockMs = timeControl.baseMinutes * 60 * 1000;
   const isCompactScreen = width <= 390;
-  const topClockOffset = isCompactScreen ? -54 : -64;
-  const bottomClockOffset = isCompactScreen ? -54 : -64;
-  const boardClusterMarginTop = isCompactScreen ? 30 : 38;
-  const boardClusterMarginBottom = isCompactScreen ? 52 : 64;
   const shouldShowOnlineWaiting = isOnlineGame && !hasTwoOnlinePlayers;
+  const isVeryCompactScreen = width <= 350;
+  const clockVerticalReserve = isVeryCompactScreen ? 48 : isCompactScreen ? 58 : 76;
+  const topClockOffset = -clockVerticalReserve;
+  const bottomClockOffset = -clockVerticalReserve;
+  const boardClusterMarginTop = clockVerticalReserve;
+  const boardClusterMarginBottom = clockVerticalReserve;
+  const clockMaxWidth = Math.min(
+    isVeryCompactScreen ? 116 : isCompactScreen ? 138 : 168,
+    boardSize * (isOnlineGame && hasTwoOnlinePlayers ? 0.42 : 0.52),
+  );
+  const onlineBadgeMaxWidth = Math.max(112, boardSize - clockMaxWidth - 10);
 
   if (shouldShowOnlineWaiting) {
     return (
@@ -1107,15 +1271,44 @@ export const LocalChessGame = ({
           style={[localGameStyles.topClockAnchor, { top: topClockOffset }]}
           pointerEvents="none"
         >
-          <LocalGameClock clock={topClock} totalMs={baseClockMs} />
+          <LocalGameClock clock={topClock} totalMs={baseClockMs} maxWidth={clockMaxWidth} />
         </View>
 
         <View
           style={[localGameStyles.bottomClockAnchor, { bottom: bottomClockOffset }]}
           pointerEvents="none"
         >
-          <LocalGameClock clock={bottomClock} totalMs={baseClockMs} />
+          <LocalGameClock clock={bottomClock} totalMs={baseClockMs} maxWidth={clockMaxWidth} />
         </View>
+
+        {isOnlineGame && hasTwoOnlinePlayers ? (
+          <>
+            <View
+              style={{ position: 'absolute', top: topClockOffset, right: 0, zIndex: 8 }}
+              pointerEvents="none"
+            >
+              <OnlinePlayerBadge
+                participant={participantByActiveColor[topBadgeColor]}
+                color={topBadgeColor}
+                theme={uiTheme}
+                align="right"
+                maxWidth={onlineBadgeMaxWidth}
+              />
+            </View>
+
+            <View
+              style={[localGameStyles.bottomPlayerBadgeAnchor, { bottom: bottomClockOffset }]}
+              pointerEvents="none"
+            >
+              <OnlinePlayerBadge
+                participant={participantByActiveColor[bottomBadgeColor]}
+                color={bottomBadgeColor}
+                theme={uiTheme}
+                maxWidth={onlineBadgeMaxWidth}
+              />
+            </View>
+          </>
+        ) : null}
       </View>
 
       <LocalGameActionBar
