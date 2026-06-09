@@ -6,7 +6,6 @@ import Animated, {
   Easing,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 
@@ -247,7 +246,7 @@ export function Piece({ isPremovedPiece = false, piece, square, squares }: Piece
         {typeof chessPieces[piece] === 'function' ? (
           (chessPieces[piece] as CustomPieceFn)({
             squareWidth: boardWidth / 8,
-            isDragging: dragState.isDragging ?? false,
+            isDragging: isDragging ?? false,
             square,
           })
         ) : (

@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
-import { ChessRook, Shuffle } from 'lucide-react-native';
+import { Shuffle } from 'lucide-react-native';
 import { Text, XStack, YStack, useTheme } from 'tamagui';
+import { Image } from 'react-native';
 
 import { ChessButton } from '@/components/ui/ChessButton';
 import { type SideChoice } from '@/components/local-game/hooks/use-local-game-config';
@@ -49,9 +50,11 @@ export function SideSelectionSection({ selectedSide, onSelectSide }: SideSelecti
           selected={selectedSide === 'white'}
           onPress={() => onSelectSide('white')}
           icon={
-            <Text color={selectedSide === 'white' ? theme.light.val : theme.dark.val}>
-              <ChessRook size={24} fill={theme.light.val} />
-            </Text>
+            <Image
+              source={require('../../../assets/images/pieces/pawnW.png')}
+              style={{ width: 32, height: 32 }}
+              resizeMode="contain"
+            />
           }
         />
 
@@ -72,9 +75,15 @@ export function SideSelectionSection({ selectedSide, onSelectSide }: SideSelecti
           selected={selectedSide === 'black'}
           onPress={() => onSelectSide('black')}
           icon={
-            <Text color={selectedSide === 'black' ? theme.light.val : theme.dark.val}>
-              <ChessRook size={24} fill={theme.dark.val} />
-            </Text>
+            <Image
+              source={
+                selectedSide === 'black'
+                  ? require('../../../assets/images/pieces/pawnBButton.png')
+                  : require('../../../assets/images/pieces/pawnB.png')
+              }
+              style={{ width: 32, height: 32 }}
+              resizeMode="contain"
+            />
           }
         />
       </XStack>
