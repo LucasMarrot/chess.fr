@@ -9,10 +9,9 @@ import { useState } from 'react';
 type ProfileAvatarButtonProps = {
   seed: string;
   onPress: () => void;
-  isExpanded: boolean;
 };
 
-export function ProfileAvatarButton({ seed, onPress, isExpanded }: ProfileAvatarButtonProps) {
+export function ProfileAvatarButton({ seed, onPress }: ProfileAvatarButtonProps) {
   const [feedbackSignal, setFeedbackSignal] = useState(0);
   const [isPressed, setIsPressed] = useState(false);
 
@@ -25,8 +24,7 @@ export function ProfileAvatarButton({ seed, onPress, isExpanded }: ProfileAvatar
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={PROFILE_UI.labels.openMenu}
-        accessibilityState={{ expanded: isExpanded }}
+        accessibilityLabel="Ouvrir le profil"
         onPress={onPress}
         onPressIn={() => {
           setIsPressed(true);

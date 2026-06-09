@@ -2,6 +2,7 @@ import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 export type AuthProfile = {
+  id?: string;
   name: string;
   email: string;
   isAuthenticated: boolean;
@@ -20,6 +21,7 @@ export function mapUserToAuthProfile(user: User | null): AuthProfile {
   const resolvedName = resolveUserName(user?.user_metadata as Record<string, unknown> | undefined);
 
   return {
+    id: user?.id,
     name: resolvedName || user?.email?.split('@')[0] || GUEST_NAME,
     email: user?.email ?? '',
     isAuthenticated: Boolean(user),

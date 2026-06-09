@@ -1,46 +1,41 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { XStack, View } from 'tamagui';
+import { useRouter } from 'expo-router';
 
 import { PROFILE_UI } from '@/constants/profile-ui';
-import { ProfileMenu } from '../profile/ProfileMenu';
 import { useAuthProfile } from '@/hooks/use-auth-profile';
-import { Alert } from 'react-native';
+import { ProfileAvatarButton } from '../profile/ProfileAvatarButton';
+import { FriendsButton } from '../social/FriendsButton';
+import { FriendsSheet } from '../social/FriendsSheet';
 
 type AppHeaderProps = {
   centerContent?: ReactNode;
   leftContent?: ReactNode;
+  rightContent?: ReactNode; // <-- Ajout de la prop
   showBorder?: boolean;
 };
 
-export function AppHeader({ centerContent, leftContent, showBorder = true }: AppHeaderProps) {
-  const { profile, isSigningOut, signOut } = useAuthProfile();
-
-  async function handleSignOut() {
-    const { error } = await signOut();
-    if (error) {
-      Alert.alert('Erreur', error.message);
-      return;
-    }
-
-    Alert.alert('Deconnecte', 'Vous etes deconnecte.');
-  }
-
+export function AppHeader({
+  centerContent,
+  leftContent,
+  rightContent,
+  showBorder = true,
+}: AppHeaderProps) {
+  const { profile } = useAuthProfile();
+  const router = useRouter();
+  const [isFriendsSheetOpen, setIsFriendsSheetOpen] = useState(false);
   const insets = useSafeAreaInsets();
+
   const horizontalPadding = 12;
   const verticalPadding = 8;
-  const profileButtonWidth = PROFILE_UI.avatarButton.size + PROFILE_UI.avatarButton.padding * 2 + 2;
-  const sideSlotWidth = profileButtonWidth;
-  const shouldCenterProfile = !centerContent && !leftContent;
 
-  const profileMenu = (
-    <ProfileMenu
-      name={profile.name}
-      email={profile.email}
-      isSigningOut={isSigningOut}
-      onSignOut={handleSignOut}
-    />
-  );
+  const profileButtonWidth = PROFILE_UI.avatarButton.size + PROFILE_UI.avatarButton.padding * 2 + 2;
+  const friendsButtonWidth = 40;
+  const rightSideDefaultWidth = profileButtonWidth + friendsButtonWidth + 12;
+
+  // On s'assure que les deux fentes sont égales pour un centrage parfait
+  const sideSlotWidth = Math.max(profileButtonWidth, rightSideDefaultWidth);
 
   return (
     <View
@@ -65,7 +60,19 @@ export function AppHeader({ centerContent, leftContent, showBorder = true }: App
         </View>
 
         <View width={sideSlotWidth} alignItems="flex-end" justifyContent="center">
-          {profileMenu}
+          {rightContent !== undefined ? (
+            rightContent
+          ) : profile.isAuthenticated && profile.id ? (
+            <XStack alignItems="center" gap="$3">
+              <FriendsButton onPress={() => setIsFriendsSheetOpen(true)} />
+
+              <FriendsSheet
+                open={isFriendsSheetOpen}
+                onOpenChange={setIsFriendsSheetOpen}
+                currentUserId={profile.id}
+              />
+            </XStack>
+          ) : null}
         </View>
       </XStack>
     </View>

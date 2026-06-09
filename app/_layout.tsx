@@ -61,6 +61,7 @@ export default function RootLayout() {
           <Stack.Screen name="local-game" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
+
         <StatusBar style="auto" />
       </TamaguiProvider>
     </GestureHandlerRootView>
