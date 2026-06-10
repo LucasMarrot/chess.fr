@@ -9,10 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import {
-  CHESS_BUTTON_INTERACTION,
-  CHESS_BUTTON_VARIANTS,
-} from '@/constants/chess-button';
+import { CHESS_BUTTON_INTERACTION, CHESS_BUTTON_VARIANTS } from '@/constants/chess-button';
 
 import { AnimatedClockIcon } from './AnimatedClockIcon';
 import { localGameStyles } from './styles';
@@ -22,9 +19,10 @@ import { formatClock } from './utils';
 type LocalGameClockProps = {
   clock: LocalGameClockModel;
   totalMs: number;
+  maxWidth?: number;
 };
 
-export const LocalGameClock = ({ clock, totalMs }: LocalGameClockProps) => {
+export const LocalGameClock = ({ clock, totalMs, maxWidth }: LocalGameClockProps) => {
   const tokens = getTokens();
   const { width } = useWindowDimensions();
   const isBlackClock = clock.color === 'black';
@@ -32,16 +30,18 @@ export const LocalGameClock = ({ clock, totalMs }: LocalGameClockProps) => {
     ? CHESS_BUTTON_VARIANTS.primary
     : CHESS_BUTTON_VARIANTS.secondary;
   const depth = variantConfig.depth;
-  const isCompact = width <= 390;
-  const isVeryCompact = width <= 350;
+  const availableWidth = Math.max(112, maxWidth ?? width);
+  const isCompact = width <= 390 || availableWidth <= 146;
+  const isVeryCompact = width <= 350 || availableWidth <= 122;
 
-  const clockWidth = 125;
   const verticalPadding = isVeryCompact ? 5 : isCompact ? 7 : 11;
   const horizontalPadding = isVeryCompact ? 7 : isCompact ? 11 : 15;
   const iconSize = isVeryCompact ? 16 : isCompact ? 18 : 20;
-  const textWidth = isVeryCompact ? 76 : isCompact ? 88 : 108;
   const fontSize = isVeryCompact ? '$5' : isCompact ? '$6' : '$7';
   const gap = isVeryCompact ? 6 : isCompact ? 8 : 10;
+  const preferredClockWidth = isVeryCompact ? 112 : isCompact ? 136 : 168;
+  const clockWidth = Math.min(availableWidth, preferredClockWidth);
+  const textWidth = Math.max(70, clockWidth - horizontalPadding * 2 - iconSize - gap);
 
   const isCritical = clock.clockMs <= 10_000;
   const normalBackgroundColor = String(tokens.color[variantConfig.surfaceToken].val);
@@ -118,6 +118,7 @@ export const LocalGameClock = ({ clock, totalMs }: LocalGameClockProps) => {
           fontFamily="$body"
           fontSize={fontSize}
           fontWeight="400"
+          numberOfLines={1}
           textAlign="right"
           width={textWidth}
         >

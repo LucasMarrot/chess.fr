@@ -6,6 +6,11 @@ export type AuthProfile = {
   name: string;
   email: string;
   isAuthenticated: boolean;
+  elo: {
+    bullet: number;
+    blitz: number;
+    rapid: number;
+  };
 };
 
 const GUEST_NAME = 'Utilisateur';
@@ -25,12 +30,36 @@ export function mapUserToAuthProfile(user: User | null): AuthProfile {
     name: resolvedName || user?.email?.split('@')[0] || GUEST_NAME,
     email: user?.email ?? '',
     isAuthenticated: Boolean(user),
+    elo: {
+      bullet: 1200,
+      blitz: 1200,
+      rapid: 1200,
+    },
   };
 }
 
 export async function fetchCurrentAuthProfile(): Promise<AuthProfile> {
   const { data } = await supabase.auth.getUser();
-  return mapUserToAuthProfile(data.user ?? null);
+  const profile = mapUserToAuthProfile(data.user ?? null);
+
+  if (!data.user) return profile;
+
+  const { data: ratingProfile } = await supabase
+    .from('profiles')
+    .select('elo_bullet, elo_blitz, elo_rapid')
+    .eq('id', data.user.id)
+    .maybeSingle();
+
+  if (!ratingProfile) return profile;
+
+  return {
+    ...profile,
+    elo: {
+      bullet: Number(ratingProfile.elo_bullet ?? profile.elo.bullet),
+      blitz: Number(ratingProfile.elo_blitz ?? profile.elo.blitz),
+      rapid: Number(ratingProfile.elo_rapid ?? profile.elo.rapid),
+    },
+  };
 }
 
 export function subscribeToAuthProfile(

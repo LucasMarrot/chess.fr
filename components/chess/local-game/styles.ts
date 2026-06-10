@@ -28,6 +28,22 @@ export const localGameStyles = StyleSheet.create({
     zIndex: 8,
     right: 0,
   },
+  topPlayerBadgeAnchor: {
+    position: 'absolute',
+    zIndex: 8,
+    left: 0,
+    right: 0,
+    alignItems: 'flex-end',
+  },
+  bottomPlayerBadgeAnchor: {
+    position: 'absolute',
+    zIndex: 8,
+    left: 0,
+  },
+  playerBadge: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
   boardFrame: {
     position: 'relative',
     borderRadius: 4,
@@ -83,7 +99,7 @@ export const localGameStyles = StyleSheet.create({
   modalActionsRow: {
     marginTop: 8,
     gap: 10,
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
     justifyContent: 'flex-end',
   },
   modalContentInset: {
@@ -129,6 +145,8 @@ export const localGameStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: 18,
+    paddingHorizontal: 14,
+    paddingTop: 18,
   },
 });

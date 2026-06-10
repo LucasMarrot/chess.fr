@@ -31,6 +31,7 @@ export default function LocalGameConfigScreen() {
     customIncrementInput,
     isCustomCategoryActive,
     canLaunchGame,
+    isOnlineMode,
     visibleCadences,
     tabIndicatorX,
     indicatorWidth,
@@ -73,7 +74,7 @@ export default function LocalGameConfigScreen() {
               disabled={!canLaunchGame}
               onPress={launchLocalGame}
             >
-              Lancer la partie
+              {isOnlineMode ? 'Creer la partie en ligne' : 'Lancer la partie'}
             </ChessButton>
           </YStack>
         </ScreenContent>

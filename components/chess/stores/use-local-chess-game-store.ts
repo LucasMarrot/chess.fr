@@ -44,9 +44,10 @@ export type PendingPromotion = {
   color: Color;
 };
 
-type MoveAttemptResult = {
+export type MoveAttemptResult = {
   ok: boolean;
   requiresPromotion: boolean;
+  move?: LocalMoveRecord;
 };
 
 type LocalGameConfig = {
@@ -65,6 +66,11 @@ export type LocalMoveRecord = {
   san: string;
   color: Color;
   isCapture: boolean;
+};
+
+export type RemoteGameSnapshot = {
+  fen: string;
+  lastMove: LocalMoveRecord | null;
 };
 
 type LocalClockState = {
@@ -103,6 +109,8 @@ type LocalChessGameState = {
   setAutoPromoteToQueen: (enabled: boolean) => void;
   getLegalTargets: (square: Square) => LocalMoveTarget[];
   attemptMove: (from: Square, to: Square, promotionPiece?: Piece) => MoveAttemptResult;
+  applyRemoteMove: (from: Square, to: Square, promotionPiece?: Piece) => MoveAttemptResult;
+  applyRemoteSnapshot: (snapshot: RemoteGameSnapshot) => void;
   confirmPromotion: (piece: Piece) => boolean;
   cancelPromotion: () => void;
 };
@@ -638,19 +646,21 @@ export const useLocalChessGameStore = create<LocalChessGameState>((set, get) => 
             lastTickAt: now,
           };
 
+      const lastMove = {
+        from: playedMove.from as Square,
+        to: playedMove.to as Square,
+        san: playedMove.san,
+        color: playedMove.color,
+        isCapture: Boolean(playedMove.captured),
+      };
+
       set({
         fen: chess.fen(),
         turn: nextTurn,
         status: status.status,
         result: status.result,
         moveHistory,
-        lastMove: {
-          from: playedMove.from as Square,
-          to: playedMove.to as Square,
-          san: playedMove.san,
-          color: playedMove.color,
-          isCapture: Boolean(playedMove.captured),
-        },
+        lastMove,
         clocks: nextClockState,
         boardOrientation: config.autoFlip ? turnToOrientation(nextTurn) : boardOrientation,
         pendingPromotion: null,
@@ -658,10 +668,46 @@ export const useLocalChessGameStore = create<LocalChessGameState>((set, get) => 
         ...deriveKingSquares(chess),
       });
 
-      return { ok: true, requiresPromotion: false };
+      return { ok: true, requiresPromotion: false, move: lastMove };
     } catch {
       return { ok: false, requiresPromotion: false };
     }
+  },
+
+  applyRemoteMove: (from, to, promotionPiece) => {
+    return get().attemptMove(from, to, promotionPiece);
+  },
+
+  applyRemoteSnapshot: (snapshot) => {
+    set((state) => {
+      if (state.fen === snapshot.fen) return state;
+
+      try {
+        const chess = new Chess(snapshot.fen);
+        const status = deriveStatusAndResult(chess);
+
+        return {
+          chess,
+          fen: chess.fen(),
+          turn: chess.turn(),
+          status: status.status,
+          result: status.result,
+          pendingPromotion: null,
+          lastMove: snapshot.lastMove,
+          moveHistory: chess.history(),
+          clocks: {
+            ...state.clocks,
+            activeColor: status.result ? null : chess.turn(),
+            started: true,
+            lastTickAt: Date.now(),
+          },
+          ...deriveCheckState(chess),
+          ...deriveKingSquares(chess),
+        };
+      } catch {
+        return state;
+      }
+    });
   },
 
   confirmPromotion: (piece) => {

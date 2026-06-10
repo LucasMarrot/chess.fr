@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Animated, Easing } from 'react-native';
 
 import {
@@ -8,6 +8,7 @@ import {
   type LocalTimeControlPreset,
   type LocalTimeControlPresetKey,
 } from '@/constants/local-time-controls';
+import { createOnlineRoomId } from '@/lib/online-chess';
 
 export type CadenceCategory = 'bullet' | 'blitz' | 'rapid' | 'custom';
 type PresetCadenceCategory = Exclude<CadenceCategory, 'custom'>;
@@ -50,6 +51,9 @@ const PRESET_CADENCE_OPTIONS: CadenceOption[] = CADENCE_PRESET_ORDER.map((key) =
 
 export function useLocalGameConfig() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ mode?: string | string[] }>();
+  const mode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
+  const isOnlineMode = mode === 'online';
   const tabIndicatorX = useRef(new Animated.Value(0)).current;
 
   const [activeCategory, setActiveCategory] = useState<CadenceCategory>('rapid');
@@ -148,11 +152,19 @@ export function useLocalGameConfig() {
     router.replace({
       pathname: '/local-game/play',
       params: {
+        ...(isOnlineMode
+          ? {
+              mode: 'online',
+              roomId: createOnlineRoomId(),
+              color: selectedSide === 'black' ? 'black' : 'white',
+            }
+          : {
+              color: selectedSide,
+            }),
         timeControl: resolvedCadenceKey,
-        color: selectedSide,
       },
     });
-  }, [resolvedCadenceKey, router, selectedSide]);
+  }, [isOnlineMode, resolvedCadenceKey, router, selectedSide]);
 
   return {
     activeCategory,
@@ -162,6 +174,7 @@ export function useLocalGameConfig() {
     customIncrementInput,
     isCustomCategoryActive,
     canLaunchGame,
+    isOnlineMode,
     visibleCadences,
     tabIndicatorX,
     indicatorWidth: CADENCE_TAB_INDICATOR_WIDTH,

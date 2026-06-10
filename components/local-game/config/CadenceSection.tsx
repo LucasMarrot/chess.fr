@@ -94,6 +94,7 @@ export function CadenceSection({
               onChangeText={onCustomMinutesChange}
               keyboardType="numeric"
               placeholder="10"
+              maxLength={2}
               placeholderTextColor={theme.interactionGrey.val}
             />
           </YStack>
@@ -106,6 +107,7 @@ export function CadenceSection({
               value={customIncrementInput}
               onChangeText={onCustomIncrementChange}
               keyboardType="numeric"
+              maxLength={2}
               placeholder="0"
               placeholderTextColor={theme.interactionGrey.val}
             />
