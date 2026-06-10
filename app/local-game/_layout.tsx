@@ -11,7 +11,7 @@ function LocalGameHeader() {
   const pathname = usePathname();
   const theme = useTheme();
   const requestExitConfirm = useLocalChessUiStore((state) => state.requestExitConfirm);
-  const title = pathname.endsWith('/play') ? 'Partie en cours' : 'Configuration locale';
+  const title = pathname.endsWith('/play') ? 'Partie en cours' : 'Configuration';
 
   const handleBackPress = () => {
     if (pathname.endsWith('/play')) {

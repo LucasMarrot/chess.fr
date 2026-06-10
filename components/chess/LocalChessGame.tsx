@@ -36,6 +36,7 @@ import {
   useLocalChessGameStore,
 } from './stores/use-local-chess-game-store';
 import { useLocalChessUiStore } from './stores/use-local-chess-ui-store';
+import { getOpponentColor } from '@/lib/online-chess';
 
 type LocalChessGameProps = {
   timeControl: LocalTimeControlPreset;
@@ -307,6 +308,7 @@ export const LocalChessGame = ({
   const [isDrawConfirmOpen, setIsDrawConfirmOpen] = useState(false);
   const [isExitConfirmOpen, setIsExitConfirmOpen] = useState(false);
   const [isInviteCopied, setIsInviteCopied] = useState(false);
+  const [isCodeCopied, setIsCodeCopied] = useState(false);
   const [onlineParticipants, setOnlineParticipants] = useState<OnlineParticipant[]>([]);
   const [incomingDrawOfferId, setIncomingDrawOfferId] = useState<string | null>(null);
   const [isDrawOfferPending, setIsDrawOfferPending] = useState(false);
@@ -455,6 +457,9 @@ export const LocalChessGame = ({
     };
   }, [fen, lastMove, moveHistory.length]);
 
+  const gameCode = isOnlineGame && onlineRoomId ? onlineRoomId : '';
+  const shouldShowOnlineWaiting = isOnlineGame && !hasTwoOnlinePlayers;
+
   useEffect(() => {
     if (!onlineRoomId || !onlinePlayerColor || !currentUserId) {
       setOnlineParticipants([]);
@@ -463,8 +468,8 @@ export const LocalChessGame = ({
     }
 
     seenOnlineMoveIdsRef.current.clear();
-
     const clientId = onlineClientIdRef.current;
+
     const channel = supabase
       .channel(`online-chess:${onlineRoomId}`)
       .on('presence', { event: 'sync' }, () => {
@@ -487,7 +492,6 @@ export const LocalChessGame = ({
       })
       .on('broadcast', { event: 'move' }, ({ payload }) => {
         const movePayload = payload as Partial<OnlineMovePayload>;
-
         if (
           !movePayload.id ||
           movePayload.roomId !== onlineRoomId ||
@@ -498,7 +502,6 @@ export const LocalChessGame = ({
         ) {
           return;
         }
-
         seenOnlineMoveIdsRef.current.add(movePayload.id);
         chessboardRef.current?.clearPremoves();
         clearSelection();
@@ -506,7 +509,6 @@ export const LocalChessGame = ({
       })
       .on('broadcast', { event: 'snapshot' }, ({ payload }) => {
         const snapshotPayload = payload as Partial<OnlineSnapshotPayload>;
-
         if (
           snapshotPayload.roomId !== onlineRoomId ||
           snapshotPayload.fromClientId === clientId ||
@@ -514,7 +516,6 @@ export const LocalChessGame = ({
         ) {
           return;
         }
-
         applyRemoteSnapshot({
           fen: snapshotPayload.fen,
           lastMove: snapshotPayload.lastMove ?? null,
@@ -522,7 +523,6 @@ export const LocalChessGame = ({
       })
       .on('broadcast', { event: 'draw-offer' }, ({ payload }) => {
         const drawPayload = payload as Partial<OnlineDrawPayload>;
-
         if (
           drawPayload.roomId !== onlineRoomId ||
           drawPayload.fromClientId === clientId ||
@@ -530,18 +530,15 @@ export const LocalChessGame = ({
         ) {
           return;
         }
-
         setIncomingDrawOfferId(drawPayload.id);
         setDrawStatusMessage(null);
         setIsDrawConfirmOpen(true);
       })
       .on('broadcast', { event: 'draw-accepted' }, ({ payload }) => {
         const drawPayload = payload as Partial<OnlineDrawPayload>;
-
         if (drawPayload.roomId !== onlineRoomId || !drawPayload.id) {
           return;
         }
-
         setIncomingDrawOfferId(null);
         setIsDrawOfferPending(false);
         setDrawStatusMessage(null);
@@ -551,11 +548,9 @@ export const LocalChessGame = ({
       })
       .on('broadcast', { event: 'draw-declined' }, ({ payload }) => {
         const drawPayload = payload as Partial<OnlineDrawPayload>;
-
         if (drawPayload.roomId !== onlineRoomId || !drawPayload.id) {
           return;
         }
-
         setIncomingDrawOfferId(null);
         setIsDrawOfferPending(false);
         setDrawStatusMessage('Votre proposition de nulle a ete refusee.');
@@ -563,7 +558,6 @@ export const LocalChessGame = ({
       })
       .on('broadcast', { event: 'rematch-offer' }, ({ payload }) => {
         const rematchPayload = payload as Partial<OnlineRematchPayload>;
-
         if (
           rematchPayload.roomId !== onlineRoomId ||
           rematchPayload.fromClientId === clientId ||
@@ -571,27 +565,22 @@ export const LocalChessGame = ({
         ) {
           return;
         }
-
         setIncomingRematchOfferId(rematchPayload.id);
       })
       .on('broadcast', { event: 'rematch-accepted' }, ({ payload }) => {
         const rematchPayload = payload as Partial<OnlineRematchPayload>;
-
         if (rematchPayload.roomId !== onlineRoomId || !rematchPayload.id) {
           return;
         }
-
         setIncomingRematchOfferId(null);
         setIsRematchOfferPending(false);
         resetOnlineGameWithColor(getOppositeOnlineColor(playerOnlineColor));
       })
       .on('broadcast', { event: 'rematch-declined' }, ({ payload }) => {
         const rematchPayload = payload as Partial<OnlineRematchPayload>;
-
         if (rematchPayload.roomId !== onlineRoomId || !rematchPayload.id) {
           return;
         }
-
         setIncomingRematchOfferId(null);
         setIsRematchOfferPending(false);
         chessboardRef.current?.clearPremoves();
@@ -602,7 +591,6 @@ export const LocalChessGame = ({
       })
       .subscribe((status) => {
         if (status !== 'SUBSCRIBED') return;
-
         void channel.track({
           clientId,
           userId: currentUserId,
@@ -619,22 +607,7 @@ export const LocalChessGame = ({
       onlineChannelRef.current = null;
       void supabase.removeChannel(channel);
     };
-  }, [
-    applyRemoteMove,
-    applyRemoteSnapshot,
-    clearSelection,
-    currentUserId,
-    currentDisplayName,
-    currentElo,
-    declareDraw,
-    onlinePlayerColor,
-    onlineRoomId,
-    onReturnHome,
-    playerOnlineColor,
-    resetGame,
-    resetOnlineGameWithColor,
-    resetUi,
-  ]);
+  }, [onlineRoomId, onlinePlayerColor, currentUserId]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -1074,6 +1047,21 @@ export const LocalChessGame = ({
     }
   };
 
+  const handleCopyCode = async () => {
+    if (!gameCode) return;
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.clipboard) {
+        await navigator.clipboard.writeText(gameCode);
+      } else {
+        await Share.share({ message: gameCode });
+      }
+      setIsCodeCopied(true);
+      setTimeout(() => setIsCodeCopied(false), 1800);
+    } catch {
+      setIsCodeCopied(false);
+    }
+  };
+
   const handleRematchPress = () => {
     if (!isOnlineGame) {
       handleReplay();
@@ -1155,7 +1143,6 @@ export const LocalChessGame = ({
   );
   const baseClockMs = timeControl.baseMinutes * 60 * 1000;
   const isCompactScreen = width <= 390;
-  const shouldShowOnlineWaiting = isOnlineGame && !hasTwoOnlinePlayers;
   const isVeryCompactScreen = width <= 350;
   const clockVerticalReserve = isVeryCompactScreen ? 48 : isCompactScreen ? 58 : 76;
   const topClockOffset = -clockVerticalReserve;
@@ -1183,14 +1170,14 @@ export const LocalChessGame = ({
         >
           <YStack gap="$2">
             <Text color={uiTheme.dark} fontSize={isCompactScreen ? '$6' : '$7'} fontWeight="800">
-              En attente adversaire
+              En attente d'un adversaire
             </Text>
             <Text color={uiTheme.interactionGrey} fontSize={isCompactScreen ? '$3' : '$4'}>
-              La partie commencera quand les deux joueurs auront rejoint la salle.
+              Partagez ce code ou le lien d'invitation pour que votre adversaire vous rejoigne.
             </Text>
           </YStack>
 
-          {onlineInviteLink ? (
+          {gameCode ? (
             <YStack
               backgroundColor={uiTheme.historyHeaderBackground}
               borderColor={uiTheme.buttonSecondaryBorder}
@@ -1200,10 +1187,16 @@ export const LocalChessGame = ({
               gap="$2"
             >
               <Text color={uiTheme.dark} fontSize="$3" fontWeight="700">
-                Lien invitation
+                Code de la partie
               </Text>
-              <Text color={uiTheme.interactionGrey} fontSize="$3" numberOfLines={3}>
-                {onlineInviteLink}
+              <Text
+                color={uiTheme.dark}
+                fontSize="$6"
+                fontWeight="bold"
+                textAlign="center"
+                letterSpacing={2}
+              >
+                {gameCode}
               </Text>
             </YStack>
           ) : null}
@@ -1213,12 +1206,24 @@ export const LocalChessGame = ({
               variant="primary"
               size={isCompactScreen ? 'md' : 'lg'}
               fullWidth
-              onPress={handleCopyInviteLink}
+              onPress={handleCopyCode}
             >
-              {isInviteCopied ? 'Lien copié' : 'Copier le lien'}
+              {isCodeCopied ? 'Code copié !' : 'Copier le code'}
             </ChessButton>
+
+            {onlineInviteLink ? (
+              <ChessButton
+                variant="secondary"
+                size={isCompactScreen ? 'md' : 'lg'}
+                fullWidth
+                onPress={handleCopyInviteLink}
+              >
+                {isInviteCopied ? 'Lien copié !' : "Copier le lien d'invitation"}
+              </ChessButton>
+            ) : null}
+
             <ChessButton
-              variant="secondary"
+              variant="destructive"
               size={isCompactScreen ? 'md' : 'lg'}
               fullWidth
               onPress={handleConfirmExit}
@@ -1227,13 +1232,6 @@ export const LocalChessGame = ({
             </ChessButton>
           </YStack>
         </YStack>
-
-        <LocalGameExitConfirmOverlay
-          visible={isExitConfirmOpen}
-          onCancel={handleCancelExit}
-          onConfirm={handleConfirmExit}
-          theme={uiTheme}
-        />
       </View>
     );
   }

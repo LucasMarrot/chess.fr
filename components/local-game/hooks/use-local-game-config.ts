@@ -9,6 +9,7 @@ import {
   type LocalTimeControlPresetKey,
 } from '@/constants/local-time-controls';
 import { createOnlineRoomId } from '@/lib/online-chess';
+import { supabase } from '@/lib/supabase';
 
 export type CadenceCategory = 'bullet' | 'blitz' | 'rapid' | 'custom';
 type PresetCadenceCategory = Exclude<CadenceCategory, 'custom'>;
@@ -146,24 +147,43 @@ export function useLocalGameConfig() {
     setSelectedSide(side);
   }, []);
 
-  const launchLocalGame = useCallback(() => {
+  const launchLocalGame = useCallback(async () => {
+    // <-- Ajoute 'async'
     if (!resolvedCadenceKey) return;
 
-    router.replace({
-      pathname: '/local-game/play',
-      params: {
-        ...(isOnlineMode
-          ? {
-              mode: 'online',
-              roomId: createOnlineRoomId(),
-              color: selectedSide === 'black' ? 'black' : 'white',
-            }
-          : {
-              color: selectedSide,
-            }),
-        timeControl: resolvedCadenceKey,
-      },
-    });
+    if (isOnlineMode) {
+      // 1. On génère un beau code de 6 lettres (ta fonction génère déjà ça si tu l'as modifiée)
+      const roomId = createOnlineRoomId();
+      const hostColor = selectedSide === 'black' ? 'black' : 'white';
+
+      // 2. On sauvegarde la partie dans Supabase de façon invisible
+      const { error } = await supabase.from('game_rooms').insert({
+        id: roomId,
+        time_control: resolvedCadenceKey,
+        host_color: hostColor,
+      });
+
+      if (error) console.error('Erreur sauvegarde DB:', error);
+
+      // 3. On route l'hôte vers la partie (comme avant)
+      router.replace({
+        pathname: '/local-game/play',
+        params: {
+          mode: 'online',
+          roomId,
+          color: hostColor,
+          timeControl: resolvedCadenceKey,
+        },
+      });
+    } else {
+      router.replace({
+        pathname: '/local-game/play',
+        params: {
+          color: selectedSide,
+          timeControl: resolvedCadenceKey,
+        },
+      });
+    }
   }, [isOnlineMode, resolvedCadenceKey, router, selectedSide]);
 
   return {
