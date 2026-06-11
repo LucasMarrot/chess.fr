@@ -1,42 +1,45 @@
-import { Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { View, YStack } from 'tamagui';
 
-import { ProfileMenu } from '@/components/profile/ProfileMenu';
 import { ChessButton } from '@/components/ui/ChessButton';
-import { useAuthProfile } from '@/hooks/use-auth-profile';
+import { AppHeader } from '@/components/headers/AppHeader';
 
 export default function HomeScreen() {
-  const { profile, isSigningOut, signOut } = useAuthProfile();
+  const router = useRouter();
 
-  async function handleSignOut() {
-    const { error } = await signOut();
-    if (error) {
-      Alert.alert('Erreur', error.message);
-      return;
-    }
-
-    Alert.alert('Deconnecte', 'Vous etes deconnecte.');
-  }
+  const handlePlayOnline = () => {
+    router.push({
+      pathname: '/local-game/config',
+      params: {
+        mode: 'online',
+      },
+    });
+  };
 
   return (
-    <View flex={1} backgroundColor="$background">
-      <YStack flex={1} p="$4" gap="$3" paddingTop={120}>
-        <ProfileMenu
-          name={profile.name}
-          email={profile.email}
-          isSigningOut={isSigningOut}
-          onSignOut={handleSignOut}
-        />
-
-        <YStack gap={'$3'} width={'fit-content'} alignItems="center">
-          <ChessButton variant="primary" size="lg">
-            Jouer maintenant
+    <>
+      <AppHeader />
+      <View
+        flex={1}
+        backgroundColor="$background"
+        justifyContent="center"
+        alignItems="center"
+        p="$4"
+      >
+        <YStack width="100%" maxWidth={360} alignItems="center" gap="$4">
+          <ChessButton variant="primary" size="lg" fullWidth onPress={handlePlayOnline}>
+            Jouer en ligne
           </ChessButton>
-          <ChessButton variant="secondary" size="lg">
-            Parametres du plateau
+          <ChessButton
+            variant="secondary"
+            size="lg"
+            fullWidth
+            onPress={() => router.push('/local-game/config')}
+          >
+            Jouer une partie
           </ChessButton>
         </YStack>
-      </YStack>
-    </View>
+      </View>
+    </>
   );
 }
