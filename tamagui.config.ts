@@ -5,17 +5,11 @@ import { config as defaultConfig } from '@tamagui/config/v3';
 const { size, space, zIndex } = defaultConfig.tokens;
 
 const loraFont = createFont({
-  family: 'Lora',
+  family: 'Roboto',
   size: { 1: 12, 2: 14, 3: 16, 4: 18, 5: 20, 6: 24, 7: 32, 8: 40, 9: 48, true: 16 },
   weight: { 1: '400', 3: '500', 5: '600', 7: '700', true: '400' },
   lineHeight: { 1: 18, 2: 22, 3: 24, 4: 26, 5: 30, 6: 36, 7: 48, 8: 60, 9: 72, true: 24 },
   letterSpacing: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, true: 0 },
-  face: {
-    400: { normal: 'Lora_400Regular' },
-    500: { normal: 'Lora_500Medium' },
-    600: { normal: 'Lora_600SemiBold' },
-    700: { normal: 'Lora_700Bold' },
-  },
 });
 
 const animations = createAnimations({
