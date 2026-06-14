@@ -65,7 +65,7 @@ export const LocalGameResultOverlay = ({
               textAlign: 'center',
             }}
           >
-            Revenir a la Home
+            Quitter
           </ChessButton>
         </>
       }
