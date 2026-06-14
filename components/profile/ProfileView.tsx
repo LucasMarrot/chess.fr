@@ -1,5 +1,4 @@
 import React from 'react';
-import { Image } from 'react-native'; // <-- AJOUT DE L'IMAGE NATIVE ICI
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Avatar, Text, ScrollView, Separator, useTheme } from 'tamagui';
 import { Edit2, UserPlus, Trophy, Swords, UserMinus, UserCheck, Clock } from 'lucide-react-native';
@@ -142,12 +141,9 @@ export function ProfileView({
     <ScrollView flex={1} showsVerticalScrollIndicator={false}>
       {/* EN-TÊTE PROFIL */}
       <YStack alignItems="center" paddingVertical="$6" gap="$3">
-        {/* CORRECTION DE L'AVATAR PRINCIPAL */}
-        <Avatar circular size="$12" backgroundColor="$gray5" overflow="hidden">
-          <Image
-            source={{ uri: profile.avatar_url || 'https://via.placeholder.com/150' }}
-            style={{ width: '100%', height: '100%' }}
-          />
+        <Avatar circular size="$12">
+          <Avatar.Image src={profile.avatar_url || 'https://via.placeholder.com/150'} />
+          <Avatar.Fallback backgroundColor="$gray5" />
         </Avatar>
 
         <YStack alignItems="center">
@@ -249,14 +245,10 @@ export function ProfileView({
               backgroundColor="$gray2"
               borderRadius="$3"
             >
-              {/* CORRECTION DE L'AVATAR DES AMIS */}
-              <Avatar circular size="$4" backgroundColor="$gray5" overflow="hidden">
-                <Image
-                  source={{ uri: p.avatar_url || 'https://via.placeholder.com/150' }}
-                  style={{ width: '100%', height: '100%' }}
-                />
+              <Avatar circular size="$4">
+                <Avatar.Image src={p.avatar_url || ''} />
+                <Avatar.Fallback backgroundColor="$gray5" />
               </Avatar>
-
               <YStack flex={1}>
                 <Text fontWeight="bold">{p.username}</Text>
               </YStack>
