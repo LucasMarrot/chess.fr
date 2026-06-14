@@ -23,6 +23,104 @@ export type OnlineStatusMap = {
   [userId: string]: boolean;
 };
 
+type OnlineStatusListener = (onlineUsers: OnlineStatusMap) => void;
+type PresenceRoom = ReturnType<typeof supabase.channel>;
+type OnlinePresencePayload = {
+  user_id?: unknown;
+};
+
+type OnlinePresenceManager = {
+  room: PresenceRoom;
+  listeners: Set<OnlineStatusListener>;
+  onlineUsers: OnlineStatusMap;
+  currentUserId?: string;
+  subscribed: boolean;
+  untrackTimer?: ReturnType<typeof setTimeout>;
+};
+
+type GlobalWithOnlinePresence = typeof globalThis & {
+  __chessOnlinePresence?: OnlinePresenceManager;
+};
+
+const getOnlinePresenceManager = () => {
+  const globalState = globalThis as GlobalWithOnlinePresence;
+  if (globalState.__chessOnlinePresence) return globalState.__chessOnlinePresence;
+
+  const room = supabase.channel('online-users-v2');
+  const manager: OnlinePresenceManager = {
+    room,
+    listeners: new Set(),
+    onlineUsers: {},
+    subscribed: false,
+  };
+
+  globalState.__chessOnlinePresence = manager;
+
+  room
+    .on('presence', { event: 'sync' }, () => {
+      const onlineUsers: OnlineStatusMap = {};
+
+      Object.values(room.presenceState()).forEach((presences) => {
+        presences.forEach((presence) => {
+          const userId = (presence as OnlinePresencePayload).user_id;
+          if (typeof userId === 'string') onlineUsers[userId] = true;
+        });
+      });
+
+      manager.onlineUsers = onlineUsers;
+      manager.listeners.forEach((listener) => listener(onlineUsers));
+    })
+    .subscribe(async (status) => {
+      manager.subscribed = status === 'SUBSCRIBED';
+
+      if (manager.subscribed && manager.currentUserId) {
+        await room.track({
+          user_id: manager.currentUserId,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
+
+  return manager;
+};
+
+const subscribeToOnlinePresence = (currentUserId: string, listener: OnlineStatusListener) => {
+  const manager = getOnlinePresenceManager();
+
+  if (manager.untrackTimer) {
+    clearTimeout(manager.untrackTimer);
+    manager.untrackTimer = undefined;
+  }
+
+  manager.listeners.add(listener);
+  listener(manager.onlineUsers);
+
+  if (manager.currentUserId !== currentUserId) {
+    manager.currentUserId = currentUserId;
+
+    if (manager.subscribed) {
+      void manager.room.track({
+        user_id: currentUserId,
+        online_at: new Date().toISOString(),
+      });
+    }
+  }
+
+  return () => {
+    manager.listeners.delete(listener);
+
+    if (manager.listeners.size === 0) {
+      manager.untrackTimer = setTimeout(() => {
+        if (manager.listeners.size === 0) {
+          void manager.room.untrack();
+          manager.currentUserId = undefined;
+          manager.onlineUsers = {};
+        }
+      }, 1000);
+    }
+  };
+};
+
 export const useFriends = (currentUserId: string | undefined) => {
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineStatusMap>({});
@@ -70,29 +168,7 @@ export const useFriends = (currentUserId: string | undefined) => {
 
     fetchFriends();
 
-    const room = supabase.channel('online-users');
-
-    room
-      .on('presence', { event: 'sync' }, () => {
-        const newState = room.presenceState();
-        const onlineMap: OnlineStatusMap = {};
-
-        Object.values(newState).forEach((presences: any) => {
-          presences.forEach((presence: any) => {
-            if (presence.user_id) onlineMap[presence.user_id] = true;
-          });
-        });
-        setOnlineUsers(onlineMap);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await room.track({ user_id: currentUserId, online_at: new Date().toISOString() });
-        }
-      });
-
-    return () => {
-      room.unsubscribe();
-    };
+    return subscribeToOnlinePresence(currentUserId, setOnlineUsers);
   }, [currentUserId, fetchFriends]);
 
   const sendFriendRequest = async (addresseeId: string) => {

@@ -4,6 +4,7 @@ import { Sheet, YStack, XStack, Text, Avatar, Circle, ScrollView, Separator } fr
 import { useFriends } from '../../hooks/use-friends';
 import { useRouter } from 'expo-router';
 import { ChessButton } from '../ui/ChessButton';
+import { AvatarImage } from '../ui/AvatarImage';
 import { PlayerSearch } from './PlayerSearch';
 
 type FriendsSheetProps = {
@@ -94,8 +95,9 @@ export const FriendsSheet = ({ open, onOpenChange, currentUserId }: FriendsSheet
                       >
                         <XStack>
                           <Avatar circular size="$5">
-                            <Avatar.Image
+                            <AvatarImage
                               src={profile.avatar_url || 'https://via.placeholder.com/150'}
+                              accessibilityLabel={`Avatar de ${profile.username}`}
                             />
                             <Avatar.Fallback backgroundColor="$gray5" />
                           </Avatar>

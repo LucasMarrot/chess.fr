@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { type Href, useRouter } from 'expo-router';
 import { Button, Spinner, Text, XStack, YStack, getTokens, styled } from 'tamagui';
 import { BUTTON_FEEDBACK } from '@/constants/button-feedback';
 import {
@@ -25,6 +26,8 @@ interface ChessButtonProps {
   flex?: number;
   iconLeft?: React.ReactNode;
   textProps?: React.ComponentProps<typeof Text>;
+  href?: Href;
+  replace?: boolean;
 }
 
 const StyledChessButton = styled(Button, {
@@ -68,9 +71,12 @@ export const ChessButton = ({
   flex,
   iconLeft,
   textProps,
+  href,
+  replace = false,
 }: ChessButtonProps) => {
   const [isPressed, setIsPressed] = useState(false);
   const [feedbackSignal, setFeedbackSignal] = useState(0);
+  const router = useRouter();
 
   const tokens = getTokens();
   const darkColor = tokens.color.dark.val;
@@ -78,9 +84,10 @@ export const ChessButton = ({
 
   const isInteractionDisabled = disabled || loading;
   const isActionDisabled = isInteractionDisabled;
-  const buttonSize = CHESS_BUTTON_SIZES[size];
+  const isGhost = variant === 'ghost';
+  const buttonSize = CHESS_BUTTON_SIZES[size] ?? CHESS_BUTTON_SIZES.md;
   const isIconOnly = size === 'icon' || size === 'iconLg';
-  const variantConfig = CHESS_BUTTON_VARIANTS[variant];
+  const variantConfig = CHESS_BUTTON_VARIANTS[variant] ?? CHESS_BUTTON_VARIANTS.primary;
   const useSelectedPalette = selected && (variant === 'selectableCard' || shape === 'circle');
   const borderRadius =
     shape === 'circle' || variant === 'rounded' ? 999 : CHESS_BUTTON_INTERACTION.radiusToken;
@@ -104,7 +111,7 @@ export const ChessButton = ({
       borderColor,
       borderTopSideColor,
       edgeColor,
-      shadowColor: darkColor,
+      shadowColor: isGhost ? 'transparent' : darkColor,
       hoverColor,
       focusRingColor: accentColor,
     };
@@ -117,12 +124,17 @@ export const ChessButton = ({
     hoverColor,
     darkColor,
     accentColor,
+    isGhost,
   ]);
 
   return (
     <StyledChessButton
       onPress={() => {
         if (isActionDisabled) return;
+        if (href) {
+          if (replace) router.replace(href);
+          else router.push(href);
+        }
         onPress?.();
       }}
       shape={shape}
@@ -149,31 +161,47 @@ export const ChessButton = ({
       minWidth={isIconOnly || shape === 'circle' ? buttonSize.height : flex ? 0 : undefined}
       cursor={isActionDisabled ? BUTTON_FEEDBACK.cursorDisabled : BUTTON_FEEDBACK.cursorPointer}
       backgroundColor={colors.backgroundColor}
-      borderWidth={CHESS_BUTTON_INTERACTION.borderWidth}
+      borderWidth={isGhost ? 0 : CHESS_BUTTON_INTERACTION.borderWidth}
       borderColor={colors.borderColor}
       borderTopColor={colors.borderTopSideColor}
       borderLeftColor={colors.borderTopSideColor}
       borderRightColor={colors.borderTopSideColor}
       borderBottomWidth={
-        isPressed ? CHESS_BUTTON_INTERACTION.pressedBorderBottomWidth : depth.bottomWidth
+        isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedBorderBottomWidth
+            : depth.bottomWidth
       }
       borderBottomColor={colors.edgeColor}
       opacity={isActionDisabled ? CHESS_BUTTON_INTERACTION.disabledOpacity : 1}
       shadowColor={colors.shadowColor}
       shadowOffset={{
         width: 0,
-        height: isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowOffsetY : depth.shadowOffsetY,
+        height: isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedShadowOffsetY
+            : depth.shadowOffsetY,
       }}
       shadowOpacity={
-        isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowOpacity : depth.shadowOpacity
+        isGhost
+          ? 0
+          : isPressed
+            ? CHESS_BUTTON_INTERACTION.pressedShadowOpacity
+            : depth.shadowOpacity
       }
-      shadowRadius={isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowRadius : depth.shadowRadius}
+      shadowRadius={
+        isGhost ? 0 : isPressed ? CHESS_BUTTON_INTERACTION.pressedShadowRadius : depth.shadowRadius
+      }
       elevation={
-        isPressed
+        isGhost
+          ? 0
+          : isPressed
           ? CHESS_BUTTON_INTERACTION.pressedElevation
           : CHESS_BUTTON_INTERACTION.defaultElevation
       }
-      transform={isPressed ? [{ translateY: depth.pressTranslateY }] : undefined}
+      transform={isPressed && !isGhost ? [{ translateY: depth.pressTranslateY }] : undefined}
       hoverStyle={{
         backgroundColor: colors.hoverColor,
       }}

@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'expo-router';
 import { YStack, XStack, Avatar, Text, ScrollView, Separator, useTheme } from 'tamagui';
 import { Edit2, UserPlus, Trophy, Swords, UserMinus, UserCheck, Clock } from 'lucide-react-native';
+import { AvatarImage } from '@/components/ui/AvatarImage';
 import { ChessButton } from '@/components/ui/ChessButton';
 import type { UserProfile, Friendship } from '@/hooks/use-friends';
 
@@ -142,7 +143,10 @@ export function ProfileView({
       {/* EN-TÊTE PROFIL */}
       <YStack alignItems="center" paddingVertical="$6" gap="$3">
         <Avatar circular size="$12">
-          <Avatar.Image src={profile.avatar_url || 'https://via.placeholder.com/150'} />
+          <AvatarImage
+            src={profile.avatar_url || 'https://via.placeholder.com/150'}
+            accessibilityLabel={`Avatar de ${profile.username}`}
+          />
           <Avatar.Fallback backgroundColor="$gray5" />
         </Avatar>
 
@@ -246,7 +250,7 @@ export function ProfileView({
               borderRadius="$3"
             >
               <Avatar circular size="$4">
-                <Avatar.Image src={p.avatar_url || ''} />
+                <AvatarImage src={p.avatar_url} accessibilityLabel={`Avatar de ${p.username}`} />
                 <Avatar.Fallback backgroundColor="$gray5" />
               </Avatar>
               <YStack flex={1}>

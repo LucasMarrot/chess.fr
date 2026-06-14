@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Keyboard } from 'react-native';
 import { XStack, YStack, Input, Text, Avatar, Spinner, View } from 'tamagui';
 import { useRouter } from 'expo-router';
-import { Search, X } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { supabase } from '../../lib/supabase';
 import { type UserProfile } from '../../hooks/use-friends';
-import { ChessButton } from '../ui/ChessButton';
+import { AvatarImage } from '../ui/AvatarImage';
 
 export const PlayerSearch = () => {
   const [query, setQuery] = useState<string>('');
@@ -85,7 +84,10 @@ export const PlayerSearch = () => {
               onPress={() => router.push(`/profile/${user.id}`)}
             >
               <Avatar circular size="$4">
-                <Avatar.Image src={user.avatar_url || 'https://via.placeholder.com/150'} />
+                <AvatarImage
+                  src={user.avatar_url || 'https://via.placeholder.com/150'}
+                  accessibilityLabel={`Avatar de ${user.username}`}
+                />
                 <Avatar.Fallback backgroundColor="$gray5" />
               </Avatar>
               <YStack flex={1}>

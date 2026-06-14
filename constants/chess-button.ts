@@ -1,6 +1,7 @@
 export type ChessButtonVariant =
   | 'primary'
   | 'secondary'
+  | 'ghost'
   | 'rounded'
   | 'selectableCard'
   | 'destructive';
@@ -10,6 +11,7 @@ export type ChessButtonTokenColor =
   | 'dark'
   | 'light'
   | 'primary'
+  | 'transparent'
   | 'danger'
   | 'dangerDark'
   | 'buttonPrimaryHover'
@@ -99,6 +101,21 @@ export const CHESS_BUTTON_VARIANTS: Record<ChessButtonVariant, ChessButtonVarian
       shadowOffsetY: 2,
       bottomWidth: 3,
       pressTranslateY: 2,
+    },
+  },
+  ghost: {
+    surfaceToken: 'transparent',
+    textToken: 'dark',
+    hoverToken: 'buttonSecondaryHover',
+    depth: {
+      borderColorToken: 'transparent',
+      borderTopSideColorToken: 'transparent',
+      edgeColorToken: 'transparent',
+      shadowOpacity: 0,
+      shadowRadius: 0,
+      shadowOffsetY: 0,
+      bottomWidth: 0,
+      pressTranslateY: 0,
     },
   },
   rounded: {
