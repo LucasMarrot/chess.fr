@@ -70,7 +70,7 @@ export default function HomeScreen() {
 
           {/* --- NOUVELLE SECTION: REJOINDRE --- */}
           <YStack width="100%" gap="$3" marginVertical="$2" alignItems="center">
-            <Text color="$gray10" fontSize="$2" fontWeight="700" letterSpacing={1}>
+            <Text color="$gray10" fontSize="$4" fontWeight="700" letterSpacing={1}>
               OU REJOINDRE
             </Text>
             <XStack gap="$2" width="100%">

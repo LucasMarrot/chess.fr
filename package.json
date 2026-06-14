@@ -27,6 +27,7 @@
     "@tamagui/animations-reanimated": "2.0.0-rc.26",
     "@tamagui/config": "2.0.0-rc.26",
     "@tamagui/toast": "2.0.0-rc.26",
+    "buffer": "^6.0.3",
     "chess.js": "^1.4.0",
     "expo": "^56.0.11",
     "expo-blur": "^56.0.3",
