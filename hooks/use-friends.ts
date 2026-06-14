@@ -23,16 +23,20 @@ export type OnlineStatusMap = {
   [userId: string]: boolean;
 };
 
+// --- ÉTAT GLOBAL POUR LA PRÉSENCE ---
+let sharedOnlineUsers: OnlineStatusMap = {};
+let presenceChannel: ReturnType<typeof supabase.channel> | null = null;
+const subscribers = new Set<(users: OnlineStatusMap) => void>();
+
 export const useFriends = (currentUserId: string | undefined) => {
   const [friends, setFriends] = useState<Friendship[]>([]);
-  const [onlineUsers, setOnlineUsers] = useState<OnlineStatusMap>({});
+  const [onlineUsers, setOnlineUsers] = useState<OnlineStatusMap>(sharedOnlineUsers);
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchFriends = useCallback(async () => {
     if (!currentUserId) return;
     setLoading(true);
 
-    // Requête avec jointure pour récupérer les profils des amis
     const { data, error } = await supabase
       .from('friendships')
       .select(
@@ -55,7 +59,6 @@ export const useFriends = (currentUserId: string | undefined) => {
           addressee_id: item.addressee_id,
           status: item.status,
           created_at: item.created_at,
-          // On garde le profil de l'autre utilisateur
           friend_profile: isRequester ? item.addressee : item.requester,
         };
       });
@@ -64,34 +67,55 @@ export const useFriends = (currentUserId: string | undefined) => {
     setLoading(false);
   }, [currentUserId]);
 
-  // Synchronisation "En ligne" via Supabase Presence (Realtime)
+  // Synchronisation "En ligne" centralisée
   useEffect(() => {
     if (!currentUserId) return;
 
     fetchFriends();
 
-    const room = supabase.channel('online-users');
+    const updateLocalState = (newMap: OnlineStatusMap) => setOnlineUsers(newMap);
+    subscribers.add(updateLocalState);
 
-    room
-      .on('presence', { event: 'sync' }, () => {
-        const newState = room.presenceState();
-        const onlineMap: OnlineStatusMap = {};
+    // Sécurité supplémentaire : on vérifie que Supabase n'a pas déjà ce canal en mémoire
+    const activeChannels = supabase.getChannels();
+    const hasOnlineChannel = activeChannels.some((c) => c.topic === 'realtime:online-users');
 
-        Object.values(newState).forEach((presences: any) => {
-          presences.forEach((presence: any) => {
-            if (presence.user_id) onlineMap[presence.user_id] = true;
+    if (!presenceChannel && !hasOnlineChannel) {
+      presenceChannel = supabase.channel('online-users');
+
+      presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+          if (!presenceChannel) return;
+          const newState = presenceChannel.presenceState();
+          const onlineMap: OnlineStatusMap = {};
+
+          Object.values(newState).forEach((presences: any) => {
+            presences.forEach((presence: any) => {
+              if (presence.user_id) onlineMap[presence.user_id] = true;
+            });
           });
+
+          sharedOnlineUsers = onlineMap;
+          subscribers.forEach((sub) => sub(onlineMap));
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED' && presenceChannel) {
+            await presenceChannel.track({
+              user_id: currentUserId,
+              online_at: new Date().toISOString(),
+            });
+          }
         });
-        setOnlineUsers(onlineMap);
-      })
-      .subscribe(async (status) => {
-        if (status === 'SUBSCRIBED') {
-          await room.track({ user_id: currentUserId, online_at: new Date().toISOString() });
-        }
-      });
+    }
 
     return () => {
-      room.unsubscribe();
+      subscribers.delete(updateLocalState);
+
+      if (subscribers.size === 0 && presenceChannel) {
+        supabase.removeChannel(presenceChannel);
+        presenceChannel = null;
+        sharedOnlineUsers = {};
+      }
     };
   }, [currentUserId, fetchFriends]);
 
