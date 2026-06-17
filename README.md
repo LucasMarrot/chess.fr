@@ -1,50 +1,48 @@
-# Welcome to your Expo app 👋
+# Chess.fr — Application d'échecs (projet étudiant)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Résumé :**
+Chess.fr est une application mobile multiplateforme développée avec Expo et React Native qui permet de jouer aux échecs, configurer des parties locales, gérer un profil joueur et interagir avec d'autres joueurs. Le projet sert de réalisation pour la première année d'ingénieur au CNAM.
 
-## Get started
+**Contexte pédagogique :**
 
-1. Install dependencies
+- **Type de projet :** Projet étudiant (1re année, cycle d'ingénieur) au CNAM.
+- **Objectif pédagogique :** Appliquer des concepts de développement mobile cross-platform, gestion d'état, architecture d'application, et intégration backend (Supabase) dans un projet concret.
 
-   ```bash
-   npm install
-   ```
+**Fonctionnalités principales :**
 
-2. Start the app
+- **Parties locales :** configurer et jouer des parties en local.
+- **Interface d'échiquier :** affichage et interactions gérées par le composant d'échiquier (`components/chess/ChessBoard.tsx`).
+- **Gestion de profil :** pages et avatar utilisateur (dossier `profile`).
+- **Fonctionnalités sociales :** recherche de joueurs et gestion d'amis (`components/social`).
+- **Configurations et hooks :** utilitaires et hooks personnalisés pour le jeu local et le profil (`hooks/`, `local-game/`).
 
-   ```bash
-   npx expo start
-   ```
+**Technologies et architecture :**
 
-In the output, you'll find options to open the app in a
+- **Framework mobile :** Expo + React Native.
+- **Langage :** TypeScript (fichiers .tsx, `tsconfig.json`).
+- **UI :** Tamagui (configuration dans `tamagui.config.ts`).
+- **Backend / BDD :** Supabase (fichier d'accès `lib/supabase.ts`).
+- **Structure :** routing basé sur le dossier `app/` (file-based routing), composants réutilisables dans `components/`.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**Installation locale (développement)**
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Prérequis : Node.js, npm (ou Yarn), et `expo-cli` si vous préférez CLI globale.
 
-## Get a fresh project
+```bash
+npm install
+npx expo start
+```
 
-When you're ready, run:
+Pour réinitialiser le projet (remettre le starter ailleurs) :
 
 ```bash
 npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Vous pouvez ouvrir l'application dans un émulateur iOS/Android ou sur un appareil via Expo Go / development build.
 
-## Learn more
+**Contributeurs**
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- Lucas MARROT
+- Kyliann CLARET-LAVAL
+- Zac DJAMAT
