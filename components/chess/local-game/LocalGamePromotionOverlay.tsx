@@ -25,11 +25,13 @@ export const LocalGamePromotionOverlay = ({
   onCancel,
   theme,
 }: LocalGamePromotionOverlayProps) => {
+  const PIECE_SIZE = 48;
+
   return (
     <LocalGameModal
       visible={visible}
       title="Choisir la promotion"
-      description="Selectionne la piece de promotion."
+      description="Sélectionne la pièce de promotion."
       onRequestClose={onCancel}
       theme={theme}
       actions={
@@ -38,9 +40,13 @@ export const LocalGamePromotionOverlay = ({
         </ChessButton>
       }
     >
-      <XStack width="100%" gap="$3" flexWrap="nowrap">
+      <XStack width="100%" gap="$3" flexWrap="nowrap" justifyContent="center">
         {promotionOptions.map((pieceOption) => {
-          const PieceIcon = defaultPieces[pieceOption];
+          const color = pieceOption[0];
+          const type = pieceOption[1].toUpperCase();
+          const formattedKey = `${color}${type}` as keyof typeof defaultPieces;
+
+          const PieceIcon = defaultPieces[formattedKey];
 
           return (
             <Pressable
@@ -50,13 +56,17 @@ export const LocalGamePromotionOverlay = ({
                 {
                   borderColor: theme.buttonPrimaryBorder,
                   backgroundColor: theme.promotionOptionBackground,
+                  width: PIECE_SIZE + 16,
+                  height: PIECE_SIZE + 16,
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 },
               ]}
               onPress={() => {
                 onConfirmPiece(pieceOption);
               }}
             >
-              {PieceIcon ? <PieceIcon /> : null}
+              {PieceIcon ? PieceIcon({ squareWidth: PIECE_SIZE, isDragging: false }) : null}
             </Pressable>
           );
         })}

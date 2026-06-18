@@ -5,7 +5,6 @@ import { useChessboard } from '../context/chessboard-context';
 import { Arrows } from './Arrows';
 import { DragOverlay } from './DragOverlay';
 import { WhiteKing } from './ErrorBoundary';
-import { PromotionDialog } from './PromotionDialog';
 import { Squares } from './Squares';
 
 export function Board() {
@@ -51,7 +50,6 @@ export function Board() {
                 height: boardWidth,
               }}
             />
-            <PromotionDialog />
           </View>
         )}
       </View>
