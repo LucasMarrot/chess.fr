@@ -1,14 +1,46 @@
-import { Pressable } from 'react-native';
+import { Pressable, Image } from 'react-native';
 import { XStack } from 'tamagui';
 
 import { ChessButton } from '@/components/ui/ChessButton';
-
-import { defaultPieces } from '../chessboard-lib/media/pieces';
 import type { Piece } from '../chessboard-lib/types';
 
 import { LocalGameModal } from './LocalGameModal';
 import { localGameStyles } from './styles';
 import type { LocalGameTheme } from './types';
+
+const getPromotionImageSource = (pieceOption: string) => {
+  const normalized = pieceOption.toLowerCase();
+
+  switch (normalized) {
+    case 'wq':
+    case 'q':
+      return require('../../../assets/images/pieces/queenW.png');
+
+    case 'wr':
+    case 'r':
+      return require('../../../assets/images/pieces/rookW.png');
+
+    case 'wn':
+    case 'n':
+      return require('../../../assets/images/pieces/knightW.png');
+
+    case 'wb':
+    case 'b':
+      return require('../../../assets/images/pieces/bishopW.png');
+
+    case 'bq':
+      return require('../../../assets/images/pieces/queenB.png');
+    case 'br':
+      return require('../../../assets/images/pieces/rookB.png');
+    case 'bn':
+      return require('../../../assets/images/pieces/knightB.png');
+    case 'bb':
+      return require('../../../assets/images/pieces/bishopB.png');
+
+    default:
+      return require('../../../assets/images/pieces/queenW.png');
+  }
+};
 
 type LocalGamePromotionOverlayProps = {
   visible: boolean;
@@ -42,11 +74,7 @@ export const LocalGamePromotionOverlay = ({
     >
       <XStack width="100%" gap="$3" flexWrap="nowrap" justifyContent="center">
         {promotionOptions.map((pieceOption) => {
-          const color = pieceOption[0];
-          const type = pieceOption[1].toUpperCase();
-          const formattedKey = `${color}${type}` as keyof typeof defaultPieces;
-
-          const PieceIcon = defaultPieces[formattedKey];
+          const imageSource = getPromotionImageSource(pieceOption as string);
 
           return (
             <Pressable
@@ -66,7 +94,13 @@ export const LocalGamePromotionOverlay = ({
                 onConfirmPiece(pieceOption);
               }}
             >
-              {PieceIcon ? PieceIcon({ squareWidth: PIECE_SIZE, isDragging: false }) : null}
+              {imageSource && (
+                <Image
+                  source={imageSource}
+                  style={{ width: PIECE_SIZE, height: PIECE_SIZE }}
+                  resizeMode="contain"
+                />
+              )}
             </Pressable>
           );
         })}

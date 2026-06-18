@@ -9,6 +9,12 @@ import { TamaguiProvider } from 'tamagui';
 import tamaguiConfig from '@/tamagui.config';
 import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import { configureReanimatedLogger, ReanimatedLogLevel } from 'react-native-reanimated';
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 
 export const unstable_settings = {
   initialRouteName: '(tabs)',
