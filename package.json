@@ -32,6 +32,7 @@
     "chess.js": "^1.4.0",
     "expo": "^56.0.11",
     "expo-blur": "^56.0.3",
+    "expo-build-properties": "~56.0.19",
     "expo-constants": "~56.0.18",
     "expo-font": "~56.0.6",
     "expo-haptics": "~56.0.3",
@@ -63,12 +64,12 @@
   "devDependencies": {
     "@tamagui/babel-plugin": "2.0.0-rc.26",
     "@tamagui/metro-plugin": "2.0.0-rc.26",
-    "@types/react": "~19.1.0",
+    "@types/react": "~19.2.14",
     "eslint": "^9.25.0",
-    "eslint-config-expo": "~10.0.0",
+    "eslint-config-expo": "~56.0.4",
     "prettier": "^3.8.1",
     "react-native-svg-transformer": "^1.5.3",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.3"
   },
   "private": true
 }

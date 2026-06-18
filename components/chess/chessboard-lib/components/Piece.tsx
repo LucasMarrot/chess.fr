@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import { useContext, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Pressable } from 'react-native';
 import { G, Svg } from 'react-native-svg';
