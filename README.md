@@ -1,6 +1,6 @@
 # Chess.fr — Application d'échecs (projet étudiant)
 
-https://chess-qrqagjgey-lucasmarrots-projects.vercel.app/
+[https://chess-fr.vercel.app/](https://chess-fr.vercel.app/)
 
 **Résumé :**
 Chess.fr est une application mobile multiplateforme développée avec Expo et React Native qui permet de jouer aux échecs, configurer des parties locales, gérer un profil joueur et interagir avec d'autres joueurs. Le projet sert de réalisation pour la première année d'ingénieur au CNAM.
